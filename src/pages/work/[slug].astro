@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
+import fs from 'node:fs';
 
 export async function getStaticPaths() {
   const artworks = await getCollection('artworks');
@@ -13,6 +14,8 @@ export async function getStaticPaths() {
 const { artwork } = Astro.props;
 const { title, year, medium, dimensions, description, alt } = artwork.data;
 const img = artwork.data.image;
+const base = import.meta.env.BASE_URL;
+const hasSignature = fs.existsSync('public/images/studio/signature.png');
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -41,6 +44,13 @@ const jsonLd = {
       alt={alt}
       style="width:100%; border-radius: 12px; border: 1px solid rgba(143,184,255,0.2); box-shadow: 0 0 60px rgba(168,216,255,0.08);"
     />
+    {hasSignature && (
+      <img
+        src={`${base}/images/studio/signature.png`}
+        alt="Signed by the artist"
+        style="display:block; margin: 1rem 0 0 auto; max-width: 220px; opacity: 0.9;"
+      />
+    )}
     {description && <p style="margin-top: 1.5rem; max-width: 640px;">{description}</p>}
   </article>
 </Base>

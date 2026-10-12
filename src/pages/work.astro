@@ -39,10 +39,10 @@ const orderedSeries = [
 
     {orderedSeries.filter((s) => bySeries.has(slugOf(s.id))).map((s) => {
       const key = slugOf(s.id);
-      const items = bySeries.get(key)!;
+      const items = [...bySeries.get(key)!].sort((a, b) => (a.data.order || 0) - (b.data.order || 0));
       return (
-        <section id={key} style="margin-bottom: 3.5rem;">
-          <h2 style="border-bottom: 1px solid rgba(143,184,255,0.15); padding-bottom: 0.5rem;">{s.data.title}</h2>
+        <section id={key} data-studio-series={key} style="margin-bottom: 3.5rem;">
+          <h2 data-studio-series-title={key} style="border-bottom: 1px solid rgba(143,184,255,0.15); padding-bottom: 0.5rem;">{s.data.title}</h2>
           {s.data.description && <p style="color: var(--text-dim);">{s.data.description}</p>}
           <div class="gallery-grid" data-gallery>
             {items.map((a) => {
@@ -50,6 +50,7 @@ const orderedSeries = [
               return (
                 <a
                   class="art-card"
+                  data-studio-card={aslug}
                   href={`${base}/work/${aslug}/`}
                   data-pswp-src={a.data.image.src}
                   data-pswp-width="1600"
@@ -70,6 +71,15 @@ const orderedSeries = [
       );
     })}
   </section>
+
+  <!-- Artwork index for the Studio (drag to arrange) -->
+  <script type="application/json" id="studio-artwork-index" set:html={JSON.stringify(artworks.map((a) => ({
+    slug: slugOf(a.id),
+    file: `src/content/artworks/${a.id}`,
+    title: a.data.title,
+    series: a.data.series || 'miscellaneous',
+    order: a.data.order || 0,
+  })))} />
 
   <style>
     .gallery-grid {

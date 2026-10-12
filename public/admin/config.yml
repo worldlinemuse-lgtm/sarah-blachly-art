@@ -9,8 +9,8 @@ backend:
   # on the login screen). No OAuth proxy needed. Token must be fine-grained,
   # scoped to this repo only, with Contents: Read and write.
 
-media_folder: public/images/uploads
-public_folder: /sarah-blachly-art/images/uploads
+media_folder: src/assets/uploads
+public_folder: /sarah-blachly-art/assets/uploads
 
 collections:
   - name: artworks

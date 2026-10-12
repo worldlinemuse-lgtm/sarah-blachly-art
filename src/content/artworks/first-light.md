@@ -5,6 +5,7 @@ medium: "Digital placeholder"
 dimensions: "—"
 series: "beginnings"
 featured: true
+order: 0
 image: ../../assets/placeholder-art.svg
 description: "This is a placeholder entry showing how artworks appear. Sarah's real pieces will replace it."
 alt: "Placeholder night-sky artwork"

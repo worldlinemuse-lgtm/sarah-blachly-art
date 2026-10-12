@@ -10,6 +10,7 @@ const artworks = defineCollection({
     dimensions: z.string().optional(),
     series: z.string().optional(),
     featured: z.boolean().default(false),
+    order: z.number().default(0),
     image: image(),
     description: z.string().optional(),
     alt: z.string(),

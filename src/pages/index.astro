@@ -8,7 +8,7 @@ const base = import.meta.env.BASE_URL;
   <section class="hero fade-in">
     <h1>Sarah Blachly</h1>
     <p class="subtitle">Art Portfolio</p>
-    <p>{siteSettings.heroStatement}</p>
+    <p data-studio-editable data-studio-target="site.json:heroStatement">{siteSettings.heroStatement}</p>
     <a class="btn" href={`${base}/work/`}>Enter the Gallery</a>
   </section>
 

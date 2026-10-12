@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import siteSettings from '../content/settings/site.json';
+import fs from 'node:fs';
 
 interface Props {
   title: string;
@@ -10,6 +11,8 @@ interface Props {
 const { title, description = 'Art portfolio of Sarah Blachly — self-taught artist.' } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const c = siteSettings.colors;
+const hasPaintedBg = fs.existsSync('public/images/studio/background.png');
+const hasSignature = fs.existsSync('public/images/studio/signature.png');
 ---
 
 <!DOCTYPE html>
@@ -20,6 +23,7 @@ const c = siteSettings.colors;
   <title>{title} | Sarah Blachly — Art Portfolio</title>
   <meta name="description" content={description} />
   <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
+  <link rel="stylesheet" href={`${base}/studio/studio.css`} />
   <style define:vars={{ nightBlue: c.nightBlue, purpleGlow: c.purpleGlow, forestGreen: c.forestGreen }}>
     body {
       background:
@@ -30,7 +34,7 @@ const c = siteSettings.colors;
     }
   </style>
 </head>
-<body>
+<body data-studio-base={base}>
   <div class="nebula" aria-hidden="true"></div>
   <div class="milky-way" aria-hidden="true"></div>
   <div class="stars" id="stars" aria-hidden="true"></div>
@@ -55,8 +59,24 @@ const c = siteSettings.colors;
         <p class="commissions-banner">{siteSettings.commissionsMessage} — <a href={`${base}/contact/`}>get in touch</a></p>
       )}
       <p>&copy; <span id="year"></span> Sarah Blachly. All artwork &copy; the artist.</p>
+      <p style="margin-top:0.6rem;"><a href="#" data-studio-enter style="font-size:0.8rem; opacity:0.6;">Studio</a></p>
     </footer>
   </div>
+
+  <!-- Sarah's own painted background, when she makes one -->
+  {hasPaintedBg && (
+    <div class="studio-painted-bg" aria-hidden="true" style={`background-image:url(${base}/images/studio/background.png)`}></div>
+  )}
+  <style>
+    .studio-painted-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background-size: cover;
+      background-position: center;
+    }
+  </style>
 
   <style>
     .commissions-banner {
@@ -159,6 +179,22 @@ const c = siteSettings.colors;
 
       document.getElementById('year').textContent = new Date().getFullYear();
     })();
+  </script>
+
+  <!-- The Studio: Sarah's editing world. Dormant until she taps "Studio". -->
+  <script type="module">
+    const base = document.body.dataset.studioBase;
+    const studio = await import(`${base}/studio/studio.js`);
+    const drag = await import(`${base}/studio/drag.js`);
+    const text = await import(`${base}/studio/text.js`);
+    const paint = await import(`${base}/studio/paint.js`);
+    const sign = await import(`${base}/studio/sign.js`);
+    const add = await import(`${base}/studio/add.js`);
+    studio.registerMode('arrange', { enter: drag.enter, exit: drag.exit });
+    studio.registerMode('write', { enter: text.enter, exit: text.exit });
+    studio.registerMode('paint', { enter: paint.enter, exit: paint.exit });
+    studio.registerMode('sign', { enter: sign.enter, exit: sign.exit });
+    studio.registerMode('add', { enter: add.enter, exit: add.exit });
   </script>
 </body>
 </html>

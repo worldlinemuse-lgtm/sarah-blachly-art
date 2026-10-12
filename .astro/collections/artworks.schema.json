@@ -23,6 +23,10 @@
       "default": false,
       "type": "boolean"
     },
+    "order": {
+      "default": 0,
+      "type": "number"
+    },
     "image": {
       "type": "string"
     },
