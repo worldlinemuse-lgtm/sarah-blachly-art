@@ -1,0 +1,76 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'Art portfolio of Sarah Blachly — self-taught artist.' } = Astro.props;
+const base = import.meta.env.BASE_URL;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title} | Sarah Blachly Art</title>
+  <meta name="description" content={description} />
+  <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
+</head>
+<body>
+  <div class="nebula" aria-hidden="true"></div>
+  <div class="milky-way" aria-hidden="true"></div>
+  <div class="stars" id="stars" aria-hidden="true"></div>
+
+  <div class="wrap">
+    <nav class="site-nav" aria-label="Main navigation">
+      <a class="brand" href={`${base}/`}>Sarah Blachly</a>
+      <ul>
+        <li><a href={`${base}/work/`}>Work</a></li>
+        <li><a href={`${base}/about/`}>About</a></li>
+        <li><a href={`${base}/process/`}>Process</a></li>
+        <li><a href={`${base}/contact/`}>Contact</a></li>
+      </ul>
+    </nav>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer>
+      <p>&copy; <span id="year"></span> Sarah Blachly. All artwork &copy; the artist.</p>
+    </footer>
+  </div>
+
+  <script>
+    // Star field: layered box-shadows, parallax speeds
+    (function () {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const container = document.getElementById('stars');
+      function layer(count, size, opacity) {
+        const el = document.createElement('div');
+        let shadows = [];
+        for (let i = 0; i < count; i++) {
+          const x = Math.random() * 100, y = Math.random() * 100;
+          shadows.push(`${x}vw ${y}vh 0 ${size}px rgba(232,236,247,${opacity})`);
+        }
+        el.style.cssText = `position:fixed;inset:0;width:${size}px;height:${size}px;border-radius:50%;box-shadow:${shadows.join(',')};`;
+        return el;
+      }
+      container.appendChild(layer(220, 1, 0.7));
+      container.appendChild(layer(120, 2, 0.5));
+      container.appendChild(layer(40, 3, 0.35));
+
+      // Fade-in on scroll
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+      }, { threshold: 0.1 });
+      document.querySelectorAll('.fade-in').forEach(el => io.observe(el));
+
+      document.getElementById('year').textContent = new Date().getFullYear();
+    })();
+  </script>
+</body>
+</html>

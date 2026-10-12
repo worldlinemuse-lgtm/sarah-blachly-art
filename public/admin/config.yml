@@ -1,0 +1,49 @@
+# Sveltia CMS configuration — Sarah edits artworks, series, and pages here.
+# No code changes needed; everything below maps to friendly form fields.
+
+backend:
+  name: github
+  repo: worldlinemuse-lgtm/sarah-blachly-art
+  branch: main
+  base_url: https://sveltia-cms-auth.workers.dev  # OAuth proxy (to be deployed)
+
+media_folder: public/images/uploads
+public_folder: /sarah-blachly-art/images/uploads
+
+collections:
+  - name: artworks
+    label: Artworks
+    folder: src/content/artworks
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: Title, name: title, widget: string }
+      - { label: Year, name: year, widget: number, value_type: int }
+      - { label: Medium, name: medium, widget: string, required: false }
+      - { label: Dimensions, name: dimensions, widget: string, required: false }
+      - { label: Series, name: series, widget: relation, collection: series, value_field: "{{slug}}", display_fields: [title], required: false }
+      - { label: Featured, name: featured, widget: boolean, default: false }
+      - { label: Image, name: image, widget: image }
+      - { label: Description, name: description, widget: text, required: false }
+      - { label: Alt text, name: alt, widget: string, hint: "Describe the artwork for screen readers" }
+
+  - name: series
+    label: Series
+    folder: src/content/series
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: Title, name: title, widget: string }
+      - { label: Description, name: description, widget: text, required: false }
+      - { label: Cover image, name: cover, widget: image, required: false }
+
+  - name: pages
+    label: Pages
+    files:
+      - label: About
+        name: about
+        file: src/content/pages/about.md
+        fields:
+          - { label: Bio, name: bio, widget: markdown, required: false }
+          - { label: Artist statement, name: statement, widget: markdown, required: false }
+          - { label: CV / Exhibitions, name: cv, widget: markdown, required: false }

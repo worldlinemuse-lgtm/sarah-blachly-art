@@ -1,0 +1,27 @@
+---
+import Base from '../layouts/Base.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<Base title="Home" description="Sarah Blachly — self-taught artist. A dark forest gallery under the Milky Way.">
+  <section class="hero fade-in">
+    <h1>Sarah Blachly</h1>
+    <p>Self-taught artist. No official schooling — just a life full of practice. Step into the dark forest, look up, and stay a while.</p>
+    <a class="btn" href={`${base}/work/`}>Enter the Gallery</a>
+  </section>
+
+  <hr class="divider" />
+
+  <section class="fade-in" style="text-align:center; max-width:640px; margin:0 auto;">
+    <h2>Artist Statement</h2>
+    <p style="color: var(--text-dim);"><em>Your artist statement will live here — a few lines about what you make and why.</em></p>
+  </section>
+
+  <hr class="divider" />
+
+  <section class="fade-in" style="text-align:center;">
+    <h2>Featured Work</h2>
+    <p style="color: var(--text-dim);"><em>Flagship pieces will appear here once artwork is added.</em></p>
+    <a class="btn" href={`${base}/work/`}>Browse All Work</a>
+  </section>
+</Base>
