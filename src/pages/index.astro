@@ -6,9 +6,22 @@ const base = import.meta.env.BASE_URL;
 <Base title="Home" description="Sarah Blachly — self-taught artist. A dark forest gallery under the Milky Way.">
   <section class="hero fade-in">
     <h1>Sarah Blachly</h1>
+    <p class="subtitle">Art Portfolio</p>
     <p>Self-taught artist. No official schooling — just a life full of practice. Step into the dark forest, look up, and stay a while.</p>
     <a class="btn" href={`${base}/work/`}>Enter the Gallery</a>
   </section>
+
+  <style>
+    .hero .subtitle {
+      font-family: var(--serif);
+      font-size: 1.5rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--prism-1);
+      margin: -0.5rem 0 1.5rem;
+      text-shadow: 0 0 30px rgba(168, 216, 255, 0.4);
+    }
+  </style>
 
   <hr class="divider" />
 

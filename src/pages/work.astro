@@ -3,43 +3,72 @@ import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 
 const artworks = await getCollection('artworks');
+const seriesList = await getCollection('series');
 const base = import.meta.env.BASE_URL;
+
+function slugOf(id: string) { return id.replace(/\.md$/, ''); }
+
+// Group artworks by series; uncategorized go last under "Miscellaneous"
+const bySeries = new Map<string, typeof artworks>();
+for (const a of artworks) {
+  const key = a.data.series || 'miscellaneous';
+  if (!bySeries.has(key)) bySeries.set(key, []);
+  bySeries.get(key)!.push(a);
+}
+const orderedSeries = [
+  ...seriesList,
+  ...[...bySeries.keys()]
+    .filter((k) => !seriesList.some((s) => slugOf(s.id) === k))
+    .map((k) => ({ id: k + '.md', data: { title: k } })),
+];
 ---
 
-<Base title="Work" description="Browse Sarah Blachly's artwork by series.">
+<Base title="Work" description="Browse Sarah Blachly's art portfolio by category: Dragons, Abstract, Characters & OCs, Painting, and more.">
   <link rel="stylesheet" href="https://unpkg.com/photoswipe@5/dist/photoswipe.css" />
 
   <section class="fade-in" style="padding: 3rem 0;">
     <h1 style="text-align:center;">Work</h1>
-    <p style="text-align:center; color: var(--text-dim); max-width:560px; margin:0 auto 3rem;">
+    <p style="text-align:center; color: var(--text-dim); max-width:560px; margin:0 auto 1rem;">
       Click any piece to view it full-screen — arrow keys or swipe to move between works.
     </p>
+    <nav aria-label="Categories" style="text-align:center; margin-bottom: 2.5rem;">
+      {orderedSeries.filter((s) => bySeries.has(slugOf(s.id))).map((s) => (
+        <a href={`#${slugOf(s.id)}`} style="margin: 0 0.6rem; font-size: 0.95rem;">{s.data.title}</a>
+      ))}
+    </nav>
 
-    {artworks.length === 0 ? (
-      <p style="text-align:center; color: var(--text-dim);"><em>Artwork will appear here.</em></p>
-    ) : (
-      <div class="gallery-grid" id="gallery">
-        {artworks.map((a) => {
-          const slug = a.id.replace(/\.md$/, "");
-          return (
-          <a
-            class="art-card"
-            href={`${base}/work/${slug}/`}
-            data-pswp-src={a.data.image.src}
-            data-pswp-width="1600"
-            data-pswp-height="2000"
-            data-details-url={`${base}/work/${slug}/`}
-            data-title={`${a.data.title} (${a.data.year})`}
-          >
-            <img src={a.data.image.src} alt={a.data.alt} loading="lazy" />
-            <div class="art-meta">
-              <strong>{a.data.title}</strong>
-              <span>{a.data.year}{a.data.medium && ` · ${a.data.medium}`}</span>
-            </div>
-          </a>
-        )})}
-      </div>
-    )}
+    {orderedSeries.filter((s) => bySeries.has(slugOf(s.id))).map((s) => {
+      const key = slugOf(s.id);
+      const items = bySeries.get(key)!;
+      return (
+        <section id={key} style="margin-bottom: 3.5rem;">
+          <h2 style="border-bottom: 1px solid rgba(143,184,255,0.15); padding-bottom: 0.5rem;">{s.data.title}</h2>
+          {s.data.description && <p style="color: var(--text-dim);">{s.data.description}</p>}
+          <div class="gallery-grid" data-gallery>
+            {items.map((a) => {
+              const aslug = slugOf(a.id);
+              return (
+                <a
+                  class="art-card"
+                  href={`${base}/work/${aslug}/`}
+                  data-pswp-src={a.data.image.src}
+                  data-pswp-width="1600"
+                  data-pswp-height="2000"
+                  data-details-url={`${base}/work/${aslug}/`}
+                  data-title={`${a.data.title} (${a.data.year})`}
+                >
+                  <img src={a.data.image.src} alt={a.data.alt} loading="lazy" />
+                  <div class="art-meta">
+                    <strong>{a.data.title}</strong>
+                    <span>{a.data.year}{a.data.medium && ` · ${a.data.medium}`}</span>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </section>
+      );
+    })}
   </section>
 
   <style>
@@ -75,25 +104,26 @@ const base = import.meta.env.BASE_URL;
 
   <script>
     import PhotoSwipeLightbox from 'photoswipe/lightbox';
-    const lightbox = new PhotoSwipeLightbox({
-      gallery: '#gallery',
-      children: 'a.art-card',
-      pswpModule: () => import('photoswipe'),
-      padding: { top: 40, bottom: 40, left: 20, right: 20 },
-    });
-    // "Details" button in the lightbox top bar -> the artwork's own page
-    lightbox.on('uiRegister', () => {
-      lightbox.pswp.ui.registerElement({
-        name: 'details-link',
-        order: 9,
-        isButton: true,
-        html: '<span class="pswp__details-link">Artwork details</span>',
-        onClick: () => {
-          const url = lightbox.pswp.currSlide?.data?.element?.dataset?.detailsUrl;
-          if (url) window.location.href = url;
-        },
+    document.querySelectorAll('[data-gallery]').forEach((galleryEl) => {
+      const lightbox = new PhotoSwipeLightbox({
+        gallery: galleryEl,
+        children: 'a.art-card',
+        pswpModule: () => import('photoswipe'),
+        padding: { top: 40, bottom: 40, left: 20, right: 20 },
       });
+      lightbox.on('uiRegister', () => {
+        lightbox.pswp.ui.registerElement({
+          name: 'details-link',
+          order: 9,
+          isButton: true,
+          html: '<span class="pswp__details-link">Artwork details</span>',
+          onClick: () => {
+            const url = lightbox.pswp.currSlide?.data?.element?.dataset?.detailsUrl;
+            if (url) window.location.href = url;
+          },
+        });
+      });
+      lightbox.init();
     });
-    lightbox.init();
   </script>
 </Base>

@@ -15,7 +15,7 @@ const base = import.meta.env.BASE_URL;
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{title} | Sarah Blachly Art</title>
+  <title>{title} | Sarah Blachly — Art Portfolio</title>
   <meta name="description" content={description} />
   <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
 </head>
@@ -40,28 +40,103 @@ const base = import.meta.env.BASE_URL;
     </main>
 
     <footer>
+      <p class="commissions-banner">Commissions are open — <a href={`${base}/contact/`}>get in touch</a></p>
       <p>&copy; <span id="year"></span> Sarah Blachly. All artwork &copy; the artist.</p>
     </footer>
   </div>
 
+  <style>
+    .commissions-banner {
+      font-family: var(--serif);
+      font-size: 1.2rem;
+      color: var(--star);
+      text-shadow: 0 0 24px rgba(255, 200, 150, 0.25);
+      margin-bottom: 1rem;
+    }
+    /* Light wispy border: glowing line along the bottom, branching up the left side */
+    .wispy-border {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      height: 3px;
+      z-index: 3;
+      pointer-events: none;
+      background: linear-gradient(90deg,
+        transparent,
+        rgba(255, 180, 120, 0.35) 20%,
+        rgba(255, 220, 170, 0.5) 50%,
+        rgba(255, 180, 120, 0.35) 80%,
+        transparent);
+      filter: blur(1px);
+    }
+    .wispy-branch {
+      position: fixed;
+      left: 0; top: 0; bottom: 0;
+      width: 120px;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.5;
+      background:
+        radial-gradient(2px 2px at 20px 80%, rgba(168, 255, 200, 0.5), transparent),
+        radial-gradient(3px 3px at 45px 65%, rgba(255, 200, 140, 0.4), transparent),
+        radial-gradient(2px 2px at 30px 50%, rgba(168, 255, 200, 0.35), transparent),
+        radial-gradient(4px 4px at 60px 35%, rgba(255, 200, 140, 0.3), transparent),
+        radial-gradient(2px 2px at 25px 20%, rgba(168, 255, 200, 0.3), transparent);
+    }
+    .wispy-branch::before {
+      content: "";
+      position: absolute;
+      left: 12px; top: 5%; bottom: 5%;
+      width: 2px;
+      background: linear-gradient(180deg,
+        transparent,
+        rgba(150, 220, 170, 0.25) 30%,
+        rgba(255, 200, 140, 0.35) 70%,
+        rgba(255, 200, 140, 0.5));
+      filter: blur(1.5px);
+      border-radius: 2px;
+    }
+  </style>
+  <div class="wispy-branch" aria-hidden="true"></div>
+  <div class="wispy-border" aria-hidden="true"></div>
+
   <script>
-    // Star field: layered box-shadows, parallax speeds
+    // Star field: warm embers — reds, oranges, yellows, greens, ~1% blue.
+    // Softer at the top of the sky, stronger toward the bottom.
     (function () {
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       const container = document.getElementById('stars');
-      function layer(count, size, opacity) {
+      const palette = [
+        [255, 120, 80],   // red
+        [255, 150, 90],   // red-orange
+        [255, 180, 110],  // orange
+        [255, 210, 140],  // yellow-orange
+        [255, 230, 170],  // yellow
+        [170, 255, 190],  // green
+        [140, 230, 170],  // deep green
+        [150, 180, 255],  // blue (~1% of picks)
+      ];
+      function pickColor() {
+        // ~1% blue: only pick the last entry on a 1-in-100 roll
+        if (Math.random() < 0.01) return palette[7];
+        return palette[Math.floor(Math.random() * 7)];
+      }
+      function layer(count, size) {
         const el = document.createElement('div');
         let shadows = [];
         for (let i = 0; i < count; i++) {
-          const x = Math.random() * 100, y = Math.random() * 100;
-          shadows.push(`${x}vw ${y}vh 0 ${size}px rgba(232,236,247,${opacity})`);
+          const x = Math.random() * 100;
+          const y = Math.random() * 100;
+          const [r, g, b] = pickColor();
+          // softer at top (y=0), harder at bottom (y=100)
+          const opacity = 0.15 + (y / 100) * 0.6;
+          shadows.push(`${x}vw ${y}vh 0 ${size}px rgba(${r},${g},${b},${opacity.toFixed(2)})`);
         }
         el.style.cssText = `position:fixed;inset:0;width:${size}px;height:${size}px;border-radius:50%;box-shadow:${shadows.join(',')};`;
         return el;
       }
-      container.appendChild(layer(220, 1, 0.7));
-      container.appendChild(layer(120, 2, 0.5));
-      container.appendChild(layer(40, 3, 0.35));
+      container.appendChild(layer(200, 1));
+      container.appendChild(layer(110, 2));
+      container.appendChild(layer(36, 3));
 
       // Fade-in on scroll
       const io = new IntersectionObserver((entries) => {
