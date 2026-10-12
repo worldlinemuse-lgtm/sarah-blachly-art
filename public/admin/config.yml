@@ -49,3 +49,17 @@ collections:
           - { label: Bio, name: bio, widget: markdown, required: false }
           - { label: Artist statement, name: statement, widget: markdown, required: false }
           - { label: CV / Exhibitions, name: cv, widget: markdown, required: false }
+
+  - name: settings
+    label: Site settings
+    files:
+      - label: Look & messages
+        name: site
+        file: src/content/settings/site.json
+        fields:
+          - { label: Homepage statement, name: heroStatement, widget: text, required: false }
+          - { label: Commissions message, name: commissionsMessage, widget: string }
+          - { label: Show commissions message, name: commissionsOpen, widget: boolean, default: true }
+          - { label: Night blue, name: colors.nightBlue, widget: color }
+          - { label: Purple glow, name: colors.purpleGlow, widget: color }
+          - { label: Forest green, name: colors.forestGreen, widget: color }

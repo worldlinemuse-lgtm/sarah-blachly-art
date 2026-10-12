@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import siteSettings from '../content/settings/site.json';
 const base = import.meta.env.BASE_URL;
 ---
 
@@ -7,7 +8,7 @@ const base = import.meta.env.BASE_URL;
   <section class="hero fade-in">
     <h1>Sarah Blachly</h1>
     <p class="subtitle">Art Portfolio</p>
-    <p>Self-taught artist. No official schooling — just a life full of practice. Step into the dark forest, look up, and stay a while.</p>
+    <p>{siteSettings.heroStatement}</p>
     <a class="btn" href={`${base}/work/`}>Enter the Gallery</a>
   </section>
 

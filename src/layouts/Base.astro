@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import siteSettings from '../content/settings/site.json';
 
 interface Props {
   title: string;
@@ -8,6 +9,7 @@ interface Props {
 
 const { title, description = 'Art portfolio of Sarah Blachly — self-taught artist.' } = Astro.props;
 const base = import.meta.env.BASE_URL;
+const c = siteSettings.colors;
 ---
 
 <!DOCTYPE html>
@@ -18,6 +20,15 @@ const base = import.meta.env.BASE_URL;
   <title>{title} | Sarah Blachly — Art Portfolio</title>
   <meta name="description" content={description} />
   <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
+  <style define:vars={{ nightBlue: c.nightBlue, purpleGlow: c.purpleGlow, forestGreen: c.forestGreen }}>
+    body {
+      background:
+        radial-gradient(1200px 800px at 70% -10%, color-mix(in srgb, var(--purpleGlow) 35%, transparent), transparent 60%),
+        radial-gradient(900px 700px at 15% 10%, color-mix(in srgb, var(--nightBlue) 50%, transparent), transparent 60%),
+        radial-gradient(1000px 900px at 50% 110%, color-mix(in srgb, var(--forestGreen) 45%, transparent), transparent 60%),
+        linear-gradient(180deg, var(--night-0) 0%, #0a1226 45%, var(--forestGreen) 100%);
+    }
+  </style>
 </head>
 <body>
   <div class="nebula" aria-hidden="true"></div>
@@ -40,7 +51,9 @@ const base = import.meta.env.BASE_URL;
     </main>
 
     <footer>
-      <p class="commissions-banner">Commissions are open — <a href={`${base}/contact/`}>get in touch</a></p>
+      {siteSettings.commissionsOpen && (
+        <p class="commissions-banner">{siteSettings.commissionsMessage} — <a href={`${base}/contact/`}>get in touch</a></p>
+      )}
       <p>&copy; <span id="year"></span> Sarah Blachly. All artwork &copy; the artist.</p>
     </footer>
   </div>
