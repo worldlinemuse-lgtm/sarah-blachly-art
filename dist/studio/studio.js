@@ -65,7 +65,12 @@ function promptForToken() {
     });
     const submit = async () => {
       const t = input.value.trim();
-      if (!t) return;
+      if (!t) {
+        err.hidden = false;
+        err.textContent = 'Please paste your studio code first.';
+        input.focus();
+        return;
+      }
       enterBtn.disabled = true;
       enterBtn.textContent = 'Checking…';
       setToken(t);

@@ -55,7 +55,15 @@ export function enter() {
   fileInput.addEventListener('change', () => {
     const f = fileInput.files[0];
     if (!f) return;
-    imageExt = (f.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z]/g, '') || 'jpg';
+    // SVG can carry scripts — only raster photos are safe to publish.
+    const okTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
+    const ext = (f.name.split('.').pop() || '').toLowerCase();
+    if (!okTypes.includes(f.type) || ['svg', 'svgz'].includes(ext)) {
+      fileInput.value = '';
+      toast('Please choose a photo (JPG or PNG) — not an SVG file.');
+      return;
+    }
+    imageExt = ext === 'jpeg' ? 'jpg' : (ext || 'jpg');
     const reader = new FileReader();
     reader.onload = () => {
       imageData = String(reader.result).split(',')[1];
