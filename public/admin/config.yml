@@ -5,7 +5,9 @@ backend:
   name: github
   repo: worldlinemuse-lgtm/sarah-blachly-art
   branch: main
-  base_url: https://sveltia-cms-auth.workers.dev  # OAuth proxy (to be deployed)
+  # Auth: Sarah signs in with a Personal Access Token ("Sign In with Token"
+  # on the login screen). No OAuth proxy needed. Token must be fine-grained,
+  # scoped to this repo only, with Contents: Read and write.
 
 media_folder: public/images/uploads
 public_folder: /sarah-blachly-art/images/uploads
