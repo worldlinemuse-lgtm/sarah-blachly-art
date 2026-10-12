@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#1a2b4d"/>
+      <stop offset="60%" stop-color="#0d1f16"/>
+      <stop offset="100%" stop-color="#060a14"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#d8b8ff" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#d8b8ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="1000" fill="url(#bg)"/>
+  <rect width="800" height="1000" fill="url(#glow)"/>
+  <g fill="#e8ecf7">
+    <circle cx="120" cy="150" r="2.5" opacity="0.8"/>
+    <circle cx="300" cy="90" r="1.8" opacity="0.6"/>
+    <circle cx="520" cy="200" r="2.2" opacity="0.7"/>
+    <circle cx="680" cy="120" r="1.5" opacity="0.5"/>
+    <circle cx="420" cy="320" r="2" opacity="0.6"/>
+    <circle cx="200" cy="400" r="1.6" opacity="0.5"/>
+    <circle cx="620" cy="420" r="2.4" opacity="0.7"/>
+    <circle cx="90" cy="600" r="1.8" opacity="0.5"/>
+    <circle cx="380" cy="550" r="2.2" opacity="0.6"/>
+    <circle cx="700" cy="650" r="1.6" opacity="0.5"/>
+    <circle cx="250" cy="750" r="2" opacity="0.6"/>
+    <circle cx="540" cy="800" r="2.4" opacity="0.7"/>
+  </g>
+  <path d="M0 1000 L120 700 L200 800 L320 620 L400 720 L520 580 L600 680 L720 560 L800 660 L800 1000 Z" fill="#0d1f16" opacity="0.9"/>
+  <text x="400" y="500" text-anchor="middle" fill="#9aa3bd" font-family="Georgia, serif" font-size="28" font-style="italic">Placeholder artwork</text>
+  <text x="400" y="540" text-anchor="middle" fill="#6b7390" font-family="Georgia, serif" font-size="18">Sarah's real piece goes here</text>
+</svg>

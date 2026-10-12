@@ -1,0 +1,43 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+export async function getStaticPaths() {
+  const artworks = await getCollection('artworks');
+  return artworks.map((a) => ({ params: { slug: a.slug }, props: { artwork: a } }));
+}
+
+const { artwork } = Astro.props;
+const { title, year, medium, dimensions, description, alt } = artwork.data;
+const img = artwork.data.image;
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "VisualArtwork",
+  "name": title,
+  "dateCreated": String(year),
+  "artMedium": medium || undefined,
+  "description": description || undefined,
+  "creator": { "@type": "Person", "name": "Sarah Blachly" },
+};
+---
+
+<Base title={title} description={description || `${title} (${year}) by Sarah Blachly.`}>
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+  <article class="fade-in" style="padding: 3rem 0; max-width: 800px; margin: 0 auto;">
+    <p><a href={`${import.meta.env.BASE_URL}/work/`}>&larr; Back to Work</a></p>
+    <h1>{title}</h1>
+    <p style="color: var(--text-dim);">
+      {year}
+      {medium && ` · ${medium}`}
+      {dimensions && dimensions !== '—' && ` · ${dimensions}`}
+    </p>
+    <img
+      src={img.src}
+      alt={alt}
+      style="width:100%; border-radius: 12px; border: 1px solid rgba(143,184,255,0.2); box-shadow: 0 0 60px rgba(168,216,255,0.08);"
+    />
+    {description && <p style="margin-top: 1.5rem; max-width: 640px;">{description}</p>}
+  </article>
+</Base>
