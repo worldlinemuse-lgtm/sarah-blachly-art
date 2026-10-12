@@ -19,14 +19,16 @@ const base = import.meta.env.BASE_URL;
       <p style="text-align:center; color: var(--text-dim);"><em>Artwork will appear here.</em></p>
     ) : (
       <div class="gallery-grid" id="gallery">
-        {artworks.map((a) => (
+        {artworks.map((a) => {
+          const slug = a.id.replace(/\.md$/, "");
+          return (
           <a
             class="art-card"
-            href={`${base}/work/${a.slug}/`}
+            href={`${base}/work/${slug}/`}
             data-pswp-src={a.data.image.src}
             data-pswp-width="1600"
             data-pswp-height="2000"
-            data-details-url={`${base}/work/${a.slug}/`}
+            data-details-url={`${base}/work/${slug}/`}
             data-title={`${a.data.title} (${a.data.year})`}
           >
             <img src={a.data.image.src} alt={a.data.alt} loading="lazy" />
@@ -35,7 +37,7 @@ const base = import.meta.env.BASE_URL;
               <span>{a.data.year}{a.data.medium && ` · ${a.data.medium}`}</span>
             </div>
           </a>
-        ))}
+        )})}
       </div>
     )}
   </section>
