@@ -53,6 +53,17 @@ export async function enter() {
         <button class="studio-btn studio-btn-primary" data-save-featured>Save featured</button>
       </div>
 
+      <h3 style="margin-top:1.2rem;">Visitor traces (Memory garden)</h3>
+      <p style="font-size:0.9rem;">Words visitors leave behind. Nothing appears on the site until <em>you</em> approve it here and publish.</p>
+      <div data-traces style="display:flex; flex-direction:column; gap:0.35rem;">Loading…</div>
+      <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+        <input type="text" data-trace-add placeholder="Approve a word…" style="flex:1;" maxlength="40" />
+        <button class="studio-btn" data-trace-addbtn>Add</button>
+      </div>
+      <div style="margin:0.4rem 0 0.2rem; text-align:right;">
+        <button class="studio-btn studio-btn-primary" data-save-traces>Save traces</button>
+      </div>
+
       <div class="studio-card-actions" style="margin-top:1rem;">
         <button class="studio-btn" data-act="close">Close</button>
       </div>
@@ -158,6 +169,46 @@ export async function enter() {
       it.data = data;
     });
     toast('Featured picks saved. Publish to make it live.');
+    refreshToolbar();
+  };
+
+  // ---- Visitor traces (Memory garden approvals) ----
+  const TRACES_PATH = 'public/traces.json';
+  let traces = [];
+  const tracesBox = overlay.querySelector('[data-traces]');
+  const renderTraces = () => {
+    tracesBox.innerHTML = traces.length
+      ? traces.map((t, i) => `
+        <label style="display:flex; gap:0.5rem; align-items:center; font-weight:normal;">
+          <input type="checkbox" data-trace="${i}" checked />
+          ${escapeHtml(t)}
+        </label>`).join('')
+      : '<p>No traces yet. Visitor submissions arrive by email — tick nothing, just add the ones you approve below.</p>';
+  };
+  try {
+    const raw = await readFile(TRACES_PATH);
+    const parsed = raw == null ? [] : JSON.parse(raw);
+    traces = Array.isArray(parsed) ? parsed.filter((t) => typeof t === 'string') : [];
+  } catch { traces = []; }
+  renderTraces();
+  overlay.querySelector('[data-trace-addbtn]').onclick = () => {
+    const input = overlay.querySelector('[data-trace-add]');
+    const v = input.value.trim().slice(0, 40);
+    if (!v) return;
+    if (!traces.includes(v)) traces.push(v);
+    input.value = '';
+    renderTraces();
+  };
+  overlay.querySelector('[data-save-traces]').onclick = () => {
+    err.hidden = true;
+    const kept = [];
+    tracesBox.querySelectorAll('[data-trace]').forEach((cb) => {
+      if (cb.checked) kept.push(traces[parseInt(cb.dataset.trace, 10)]);
+    });
+    traces = kept;
+    writeText(TRACES_PATH, JSON.stringify(traces, null, 2) + '\n');
+    renderTraces();
+    toast('Traces saved. Publish to make them live.');
     refreshToolbar();
   };
 }

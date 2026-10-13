@@ -31,11 +31,13 @@ const orderedSeries = [
     <p style="text-align:center; color: var(--text-dim); max-width:560px; margin:0 auto 1rem;">
       Click any piece to view it full-screen — arrow keys or swipe to move between works.
     </p>
-    <nav aria-label="Categories" style="text-align:center; margin-bottom: 2.5rem;">
+    <p class="zoom-tip">Tip: click or pinch to zoom into brushwork.</p>
+    <div class="filter-pills" role="group" aria-label="Filter by series">
+      <button type="button" class="filter-pill is-active" data-filter="all">All</button>
       {orderedSeries.filter((s) => bySeries.has(slugOf(s.id))).map((s) => (
-        <a href={`#${slugOf(s.id)}`} style="margin: 0 0.6rem; font-size: 0.95rem;">{s.data.title}</a>
+        <button type="button" class="filter-pill" data-filter={slugOf(s.id)}>{s.data.title}</button>
       ))}
-    </nav>
+    </div>
 
     {orderedSeries.filter((s) => bySeries.has(slugOf(s.id))).map((s) => {
       const key = slugOf(s.id);
@@ -82,26 +84,76 @@ const orderedSeries = [
   })))} />
 
   <style>
+    .zoom-tip {
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      font-style: italic;
+      margin: 0 auto 1.5rem;
+      opacity: 0.85;
+    }
+    .filter-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      justify-content: center;
+      margin-bottom: 2.5rem;
+    }
+    .filter-pill {
+      font-family: var(--sans);
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      background: rgba(10, 18, 38, 0.5);
+      border: 1px solid rgba(143, 184, 255, 0.18);
+      border-radius: 999px;
+      padding: 0.45rem 1.1rem;
+      cursor: pointer;
+      transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease, box-shadow 0.3s ease;
+    }
+    .filter-pill:hover {
+      color: var(--star);
+      border-color: rgba(168, 216, 255, 0.5);
+      box-shadow: 0 0 16px rgba(168, 216, 255, 0.12);
+    }
+    .filter-pill.is-active {
+      color: #0a1226;
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--prism-1), var(--prism-2));
+      border-color: transparent;
+      box-shadow: 0 0 20px rgba(168, 216, 255, 0.25);
+    }
     .gallery-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 1.5rem;
+      columns: 260px;
+      column-gap: 1.5rem;
     }
     .art-card {
-      display: block;
+      display: inline-block;
+      width: 100%;
+      break-inside: avoid;
+      margin-bottom: 1.5rem;
       border: 1px solid rgba(143, 184, 255, 0.18);
       border-radius: 12px;
       overflow: hidden;
       background: rgba(10, 18, 38, 0.5);
       transition: transform 0.3s ease, box-shadow 0.4s ease, border-color 0.4s ease;
     }
+    @keyframes breathe {
+      0%, 100% { transform: translateY(-4px) scale(1); }
+      50% { transform: translateY(-4px) scale(1.015); }
+    }
     .art-card:hover {
       text-decoration: none;
-      transform: translateY(-4px);
       border-color: rgba(168, 216, 255, 0.5);
-      box-shadow: 0 8px 40px rgba(168, 216, 255, 0.15), 0 0 24px rgba(216, 184, 255, 0.08);
+      box-shadow:
+        0 8px 40px rgba(168, 216, 255, 0.15),
+        0 0 32px rgba(168, 255, 216, 0.22),
+        0 0 64px rgba(216, 184, 255, 0.10);
+      animation: breathe 4s ease-in-out infinite;
     }
-    .art-card img { width: 100%; aspect-ratio: 4/5; object-fit: cover; display: block; }
+    @media (prefers-reduced-motion: reduce) {
+      .art-card:hover { animation: none; transform: translateY(-4px); }
+    }
+    .art-card img { width: 100%; height: auto; display: block; }
     .art-meta { padding: 0.8rem 1rem; display: flex; flex-direction: column; gap: 0.2rem; }
     .art-meta strong { color: var(--star); font-family: var(--serif); font-size: 1.05rem; }
     .art-meta span { color: var(--text-dim); font-size: 0.85rem; }
@@ -120,6 +172,9 @@ const orderedSeries = [
         children: 'a.art-card',
         pswpModule: () => import('photoswipe'),
         padding: { top: 40, bottom: 40, left: 20, right: 20 },
+        zoom: true,
+        allowPanToNext: true,
+        maxZoomLevel: 4,
       });
       lightbox.on('uiRegister', () => {
         lightbox.pswp.ui.registerElement({
@@ -134,6 +189,20 @@ const orderedSeries = [
         });
       });
       lightbox.init();
+    });
+
+    // Series filter pills: show only the chosen series section, "All" shows everything
+    const pills = document.querySelectorAll('.filter-pill');
+    const sections = document.querySelectorAll('section[data-studio-series]');
+    pills.forEach((pill) => {
+      pill.addEventListener('click', () => {
+        pills.forEach((p) => p.classList.remove('is-active'));
+        pill.classList.add('is-active');
+        const filter = pill.dataset.filter;
+        sections.forEach((section) => {
+          section.hidden = filter !== 'all' && section.dataset.studioSeries !== filter;
+        });
+      });
     });
   </script>
 </Base>

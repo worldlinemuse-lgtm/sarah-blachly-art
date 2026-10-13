@@ -1,1 +1,11 @@
-{"colors":{"forestGreen":"#14331f","nightBlue":"#16294d","purpleGlow":"#3b2d5c"},"commissionsMessage":"Commissions are open","commissionsOpen":true,"heroStatement":"Self-taught artist. No official schooling — just a life full of practice. Step into the dark forest, look up, and stay a while."}
+{
+  "colors": {
+    "forestGreen": "#14331f",
+    "nightBlue": "#16294d",
+    "purpleGlow": "#3b2d5c"
+  },
+  "commissionsMessage": "Commissions are open",
+  "commissionsOpen": true,
+  "heroStatement": "Self-taught artist. No official schooling — just a life full of practice. Step into the dark forest, look up, and stay a while.",
+  "socials": []
+}

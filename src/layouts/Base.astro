@@ -13,6 +13,15 @@ const base = import.meta.env.BASE_URL;
 const c = siteSettings.colors;
 const hasPaintedBg = fs.existsSync('public/images/studio/background.png');
 const hasSignature = fs.existsSync('public/images/studio/signature.png');
+const socials = siteSettings.socials || [];
+const navLinks = [
+  ['Work', `${base}/work/`],
+  ['3D Gallery', `${base}/gallery-3d/`],
+  ['About', `${base}/about/`],
+  ['Whiteboard', `${base}/whiteboard/`],
+  ['Process', `${base}/process/`],
+  ['Contact', `${base}/contact/`],
+];
 ---
 
 <!DOCTYPE html>
@@ -36,18 +45,20 @@ const hasSignature = fs.existsSync('public/images/studio/signature.png');
 </head>
 <body data-studio-base={base}>
   <div class="nebula" aria-hidden="true"></div>
+  <div class="ambient-wash" aria-hidden="true"></div>
   <div class="milky-way" aria-hidden="true"></div>
-  <div class="stars" id="stars" aria-hidden="true"></div>
+  <canvas id="fireflies" aria-hidden="true"></canvas>
 
   <div class="wrap">
     <nav class="site-nav" aria-label="Main navigation">
       <a class="brand" href={`${base}/`}>Sarah Blachly</a>
-      <ul>
-        <li><a href={`${base}/work/`}>Work</a></li>
-        <li><a href={`${base}/about/`}>About</a></li>
-        <li><a href={`${base}/whiteboard/`}>Whiteboard</a></li>
-        <li><a href={`${base}/process/`}>Process</a></li>
-        <li><a href={`${base}/contact/`}>Contact</a></li>
+      <button class="nav-toggle" aria-expanded="false" aria-controls="nav-menu" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+      <ul id="nav-menu">
+        {navLinks.map(([label, href]) => (
+          <li><a href={href}>{label}</a></li>
+        ))}
       </ul>
     </nav>
 
@@ -59,8 +70,21 @@ const hasSignature = fs.existsSync('public/images/studio/signature.png');
       {siteSettings.commissionsOpen && (
         <p class="commissions-banner">{siteSettings.commissionsMessage} — <a href={`${base}/contact/`}>get in touch</a></p>
       )}
+      {socials.length > 0 && (
+        <div class="socials" aria-label="Sarah's social media">
+          {socials.map((s) => (
+            <a href={s.url} target="_blank" rel="noopener">{s.label}</a>
+          ))}
+        </div>
+      )}
+      <!-- Sarah's social links will appear here once she provides them. -->
       <p>&copy; <span id="year"></span> Sarah Blachly. All artwork &copy; the artist.</p>
-      <p style="margin-top:0.6rem;"><a href="#" data-studio-enter style="font-size:0.8rem; opacity:0.6;">Studio</a></p>
+      <p class="footer-tools">
+        <button id="room-tone-toggle" aria-pressed="false" title="Toggle the quiet hum of the gallery">
+          <span aria-hidden="true">🔈</span> room tone
+        </button>
+        <a href="#" data-studio-enter class="studio-link">Studio</a>
+      </p>
     </footer>
   </div>
 
@@ -87,40 +111,82 @@ const hasSignature = fs.existsSync('public/images/studio/signature.png');
       text-shadow: 0 0 24px rgba(255, 200, 150, 0.25);
       margin-bottom: 1rem;
     }
-    /* Wispy vine — a delicate luminous tendril climbing the bottom of the page
-       and up the right side. Pure background depth: never interactive. */
+    .socials {
+      display: flex;
+      gap: 1.2rem;
+      justify-content: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .socials a {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      letter-spacing: 0.06em;
+    }
+    .socials a:hover { color: var(--prism-1); }
+    .footer-tools {
+      margin-top: 0.8rem;
+      display: flex;
+      gap: 1.2rem;
+      justify-content: center;
+      align-items: center;
+    }
+    #room-tone-toggle {
+      background: none;
+      border: 1px solid rgba(143, 184, 255, 0.25);
+      border-radius: 999px;
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      padding: 0.25rem 0.9rem;
+      cursor: pointer;
+      font-family: var(--sans);
+      transition: border-color 0.3s, color 0.3s, box-shadow 0.3s;
+    }
+    #room-tone-toggle:hover { color: var(--star); border-color: var(--prism-1); }
+    #room-tone-toggle[aria-pressed="true"] {
+      color: var(--prism-3);
+      border-color: var(--prism-3);
+      box-shadow: 0 0 16px rgba(168, 255, 216, 0.2);
+    }
+    .studio-link { font-size: 0.8rem; opacity: 0.6; }
+    /* Wispy vine — luminous undergrowth littering the bottom of the page,
+       slowly vining up the right side. Pure background depth: never interactive. */
     .wispy-vine {
       position: fixed;
       left: 0; right: 0; bottom: 0;
-      height: min(38vh, 340px);
+      height: min(44vh, 400px);
       width: 100%;
       z-index: 1;
       pointer-events: none;
-      opacity: 0.55;
+      opacity: 0.6;
     }
     @media (prefers-reduced-motion: reduce) {
       .wispy-vine .drift { animation: none; }
     }
     .wispy-vine .drift {
-      animation: vine-sway 14s ease-in-out infinite alternate;
+      animation: vine-sway 16s ease-in-out infinite alternate;
+      transform-origin: bottom center;
+    }
+    .wispy-vine .drift-b {
+      animation: vine-sway 22s ease-in-out infinite alternate-reverse;
       transform-origin: bottom center;
     }
     @keyframes vine-sway {
-      from { transform: translateX(-6px); }
-      to { transform: translateX(6px); }
+      from { transform: translateX(-7px); }
+      to { transform: translateX(7px); }
     }
   </style>
-  <svg class="wispy-vine" viewBox="0 0 1440 340" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+  <svg class="wispy-vine" viewBox="0 0 1440 400" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <defs>
       <linearGradient id="vineA" x1="0" y1="1" x2="1" y2="0">
         <stop offset="0" stop-color="#a8d8ff" stop-opacity="0"/>
-        <stop offset="0.45" stop-color="#a8d8ff" stop-opacity="0.28"/>
-        <stop offset="0.8" stop-color="#d8b8ff" stop-opacity="0.42"/>
+        <stop offset="0.45" stop-color="#a8d8ff" stop-opacity="0.3"/>
+        <stop offset="0.8" stop-color="#d8b8ff" stop-opacity="0.45"/>
         <stop offset="1" stop-color="#d8b8ff" stop-opacity="0"/>
       </linearGradient>
       <linearGradient id="vineB" x1="1" y1="1" x2="1" y2="0">
         <stop offset="0" stop-color="#a8ffd8" stop-opacity="0"/>
-        <stop offset="0.5" stop-color="#a8ffd8" stop-opacity="0.3"/>
+        <stop offset="0.5" stop-color="#a8ffd8" stop-opacity="0.32"/>
         <stop offset="1" stop-color="#a8d8ff" stop-opacity="0.45"/>
       </linearGradient>
       <radialGradient id="budGlow">
@@ -130,93 +196,192 @@ const hasSignature = fs.existsSync('public/images/studio/signature.png');
       </radialGradient>
     </defs>
     <g class="drift" fill="none" stroke-linecap="round">
-      <!-- tendrils wandering along the bottom -->
-      <path d="M-40,340 C180,322 260,286 430,308 S700,336 880,306 S1180,272 1480,322"
-            stroke="url(#vineA)" stroke-width="1.6"/>
-      <path d="M-40,340 C140,330 220,312 360,322 S620,340 780,322"
+      <!-- undergrowth littering the bottom, left to right -->
+      <path d="M-40,400 C120,386 200,360 340,378 S560,396 700,378 S940,352 1100,376 S1300,392 1480,372"
+            stroke="url(#vineA)" stroke-width="1.7"/>
+      <path d="M-40,400 C100,392 180,382 300,388 S520,400 640,390"
+            stroke="url(#vineB)" stroke-width="1.2" opacity="0.75"/>
+      <path d="M500,400 C620,390 700,372 820,384 S1000,398 1120,386"
             stroke="url(#vineB)" stroke-width="1.1" opacity="0.7"/>
-      <path d="M240,340 C300,300 280,270 340,250 S420,240 430,200"
+      <path d="M900,400 C980,388 1040,378 1140,386 S1300,396 1420,384"
+            stroke="url(#vineA)" stroke-width="1.2" opacity="0.7"/>
+      <!-- low sprigs rising from the floor -->
+      <path d="M120,400 C150,370 140,350 175,335 S215,325 220,295"
             stroke="url(#vineA)" stroke-width="1.2" opacity="0.8"/>
-      <path d="M700,340 C740,310 730,290 780,275 S850,265 860,230"
-            stroke="url(#vineB)" stroke-width="1" opacity="0.7"/>
-      <!-- the climbing vine, up the right side -->
-      <path d="M1330,340 C1310,260 1370,230 1345,150 S1320,70 1365,-10"
-            stroke="url(#vineA)" stroke-width="1.8"/>
-      <path d="M1330,340 C1290,280 1240,260 1255,200 S1290,150 1270,110"
+      <path d="M420,400 C445,375 435,355 465,345 S505,335 508,310"
             stroke="url(#vineB)" stroke-width="1.1" opacity="0.75"/>
-      <path d="M1345,150 C1380,140 1400,120 1395,95"
+      <path d="M640,400 C665,378 655,360 685,348 S720,340 722,318"
             stroke="url(#vineA)" stroke-width="1" opacity="0.7"/>
-      <!-- curls -->
-      <path d="M430,308 c26,-4 30,-34 8,-40 c-18,-5 -30,12 -18,24"
+      <path d="M960,400 C985,380 975,362 1005,350 S1040,342 1042,320"
+            stroke="url(#vineB)" stroke-width="1.1" opacity="0.75"/>
+      <!-- curls scattered along the floor -->
+      <path d="M300,388 c26,-4 30,-34 8,-40 c-18,-5 -30,12 -18,24"
             stroke="url(#vineB)" stroke-width="1" opacity="0.8"/>
-      <path d="M880,306 c-24,-6 -26,-34 -6,-38 c16,-3 26,14 15,25"
+      <path d="M700,378 c-24,-6 -26,-34 -6,-38 c16,-3 26,14 15,25"
             stroke="url(#vineA)" stroke-width="1" opacity="0.8"/>
-      <path d="M1345,150 c20,-8 22,-32 4,-36 c-15,-3 -24,13 -13,23"
+      <path d="M1100,376 c22,-6 24,-32 5,-36 c-15,-3 -24,13 -13,23"
             stroke="url(#vineB)" stroke-width="1" opacity="0.8"/>
+      <path d="M180,382 c18,-8 16,-30 0,-32 c-13,-2 -20,13 -10,21"
+            stroke="url(#vineA)" stroke-width="0.9" opacity="0.7"/>
+      <path d="M860,384 c-18,-8 -16,-30 0,-32 c13,-2 20,13 10,21"
+            stroke="url(#vineB)" stroke-width="0.9" opacity="0.7"/>
+    </g>
+    <g class="drift-b" fill="none" stroke-linecap="round">
+      <!-- the climbing vine, up the right side -->
+      <path d="M1300,400 C1280,320 1340,290 1315,210 S1290,110 1335,30 S1360,-20 1352,-40"
+            stroke="url(#vineA)" stroke-width="1.9"/>
+      <path d="M1300,400 C1260,340 1210,320 1225,260 S1260,200 1240,160"
+            stroke="url(#vineB)" stroke-width="1.2" opacity="0.8"/>
+      <path d="M1315,210 C1350,200 1372,180 1368,155"
+            stroke="url(#vineA)" stroke-width="1.1" opacity="0.75"/>
+      <path d="M1320,120 C1290,112 1278,92 1288,72"
+            stroke="url(#vineB)" stroke-width="1" opacity="0.7"/>
+      <path d="M1315,210 c22,-8 24,-34 5,-38 c-16,-3 -25,14 -13,24"
+            stroke="url(#vineB)" stroke-width="1" opacity="0.8"/>
+      <path d="M1240,160 c-20,-6 -22,-32 -4,-36 c15,-3 24,13 13,23"
+            stroke="url(#vineA)" stroke-width="1" opacity="0.8"/>
     </g>
     <g fill="url(#budGlow)">
-      <circle cx="340" cy="250" r="7"/>
-      <circle cx="430" cy="200" r="5"/>
-      <circle cx="780" cy="275" r="6"/>
-      <circle cx="860" cy="230" r="4.5"/>
-      <circle cx="1255" cy="200" r="6"/>
-      <circle cx="1395" cy="95" r="5"/>
-      <circle cx="180" cy="318" r="4"/>
-      <circle cx="1050" cy="296" r="4.5"/>
+      <circle cx="175" cy="335" r="6"/>
+      <circle cx="220" cy="295" r="4.5"/>
+      <circle cx="465" cy="345" r="5.5"/>
+      <circle cx="508" cy="310" r="4"/>
+      <circle cx="685" cy="348" r="5"/>
+      <circle cx="1005" cy="350" r="5.5"/>
+      <circle cx="1042" cy="320" r="4"/>
+      <circle cx="1225" cy="260" r="6"/>
+      <circle cx="1368" cy="155" r="5"/>
+      <circle cx="1288" cy="72" r="4.5"/>
+      <circle cx="120" cy="386" r="3.5"/>
+      <circle cx="560" cy="392" r="4"/>
+      <circle cx="940" cy="380" r="3.5"/>
+    </g>
+    <g fill="#a8ffd8" opacity="0.5">
+      <!-- tiny leaves along the stems -->
+      <ellipse cx="250" cy="378" rx="7" ry="3" transform="rotate(-24 250 378)"/>
+      <ellipse cx="480" cy="388" rx="7" ry="3" transform="rotate(18 480 388)"/>
+      <ellipse cx="780" cy="376" rx="7" ry="3" transform="rotate(-14 780 376)"/>
+      <ellipse cx="1050" cy="384" rx="7" ry="3" transform="rotate(22 1050 384)"/>
+      <ellipse cx="1308" cy="300" rx="7" ry="3" transform="rotate(-58 1308 300)"/>
+      <ellipse cx="1322" cy="180" rx="6" ry="2.8" transform="rotate(-64 1322 180)"/>
+      <ellipse cx="1235" cy="215" rx="6" ry="2.8" transform="rotate(48 1235 215)"/>
+      <ellipse cx="160" cy="360" rx="6" ry="2.8" transform="rotate(-40 160 360)"/>
     </g>
   </svg>
 
   <script>
-    // Star field: quiet fairy dust — moon white, prism blue, lilac, mint,
-    // with rare warm gold embers. Softer at the top, a little stronger below.
+    // Fireflies: colorful drifting motes that twinkle at their own rates.
+    // ~15% are diamond-shaped. They float; nothing is fixed.
     (function () {
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      const container = document.getElementById('stars');
+      const canvas = document.getElementById('fireflies');
+      const ctx = canvas.getContext('2d');
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const palette = [
-        [234, 242, 255],  // moon white
-        [200, 222, 255],  // starlight
-        [168, 216, 255],  // prism blue
-        [216, 184, 255],  // fairy lilac
-        [168, 255, 216],  // mint glow
-        [255, 210, 140],  // gold dust (rare warm)
-        [255, 154, 110],  // ember (rarest warm)
+        [234, 242, 255], [200, 222, 255], [168, 216, 255],
+        [216, 184, 255], [168, 255, 216],
+        [255, 210, 140], [255, 154, 110], [150, 255, 200],
       ];
-      const weights = [0.24, 0.2, 0.18, 0.14, 0.12, 0.08, 0.04];
+      const weights = [0.2, 0.17, 0.16, 0.13, 0.12, 0.08, 0.05, 0.09];
       function pickColor() {
         let r = Math.random(), acc = 0;
-        for (let i = 0; i < weights.length; i++) {
-          acc += weights[i];
-          if (r <= acc) return palette[i];
-        }
+        for (let i = 0; i < weights.length; i++) { acc += weights[i]; if (r <= acc) return palette[i]; }
         return palette[0];
       }
-      function layer(count, size) {
-        const el = document.createElement('div');
-        let shadows = [];
-        for (let i = 0; i < count; i++) {
-          const x = Math.random() * 100;
-          const y = Math.random() * 100;
-          const [r, g, b] = pickColor();
-          // softer at top (y=0), harder at bottom (y=100)
-          const opacity = 0.15 + (y / 100) * 0.6;
-          shadows.push(`${x}vw ${y}vh 0 ${size}px rgba(${r},${g},${b},${opacity.toFixed(2)})`);
-        }
-        el.style.cssText = `position:fixed;inset:0;width:${size}px;height:${size}px;border-radius:50%;box-shadow:${shadows.join(',')};`;
-        return el;
+      let W, H, parts = [];
+      function resize() {
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
       }
-      container.appendChild(layer(200, 1));
-      container.appendChild(layer(110, 2));
-      container.appendChild(layer(36, 3));
+      function make() {
+        parts = [];
+        const n = Math.min(150, Math.floor((W * H) / 14000));
+        for (let i = 0; i < n; i++) {
+          const [r, g, b] = pickColor();
+          parts.push({
+            x: Math.random() * W, y: Math.random() * H,
+            vx: (Math.random() - 0.5) * 0.22, vy: (Math.random() - 0.5) * 0.18,
+            size: 0.8 + Math.random() * 1.8,
+            speed: 0.4 + Math.random() * 1.8,   // twinkle rate: each its own
+            phase: Math.random() * Math.PI * 2,
+            baseAlpha: 0.25 + Math.random() * 0.55,
+            diamond: Math.random() < 0.15,
+            color: `${r},${g},${b}`,
+          });
+        }
+      }
+      function draw(p, t) {
+        const tw = 0.2 + 0.8 * Math.abs(Math.sin(t * p.speed + p.phase));
+        const a = (p.baseAlpha * tw).toFixed(3);
+        ctx.fillStyle = `rgba(${p.color},${a})`;
+        if (p.diamond) {
+          const s = p.size * 1.4;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(Math.PI / 4);
+          ctx.fillRect(-s / 2, -s / 2, s, s);
+          ctx.restore();
+        } else {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+          // soft halo
+          ctx.fillStyle = `rgba(${p.color},${(a * 0.25).toFixed(3)})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      resize(); make();
+      window.addEventListener('resize', () => { resize(); make(); });
+      if (reduced) { // one still frame: quiet, no motion
+        parts.forEach((p) => draw(p, 1.2));
+      } else {
+        (function tick(tms) {
+          const t = tms / 1000;
+          ctx.clearRect(0, 0, W, H);
+          for (const p of parts) {
+            p.x += p.vx; p.y += p.vy;
+            if (p.x < -10) p.x = W + 10; if (p.x > W + 10) p.x = -10;
+            if (p.y < -10) p.y = H + 10; if (p.y > H + 10) p.y = -10;
+            draw(p, t);
+          }
+          requestAnimationFrame(tick);
+        })(0);
+      }
 
-      // Fade-in on scroll
+      // Mobile menu
+      const toggle = document.querySelector('.nav-toggle');
+      const menu = document.getElementById('nav-menu');
+      if (toggle && menu) {
+        toggle.addEventListener('click', () => {
+          const open = menu.classList.toggle('open');
+          toggle.setAttribute('aria-expanded', String(open));
+          toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+        });
+        menu.querySelectorAll('a').forEach((a) =>
+          a.addEventListener('click', () => {
+            menu.classList.remove('open');
+            toggle.setAttribute('aria-expanded', 'false');
+          })
+        );
+      }
+
+      // Fade-in on scroll (subtle: drifts up, eases into full opacity)
       const io = new IntersectionObserver((entries) => {
-        entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-      }, { threshold: 0.1 });
-      document.querySelectorAll('.fade-in').forEach(el => io.observe(el));
+        entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add('visible'); });
+      }, { threshold: 0.08 });
+      document.querySelectorAll('.fade-in').forEach((el) => io.observe(el));
 
       document.getElementById('year').textContent = new Date().getFullYear();
-    })();
+
+      // Ambient extras: room tone, whisper, sand memory, memory garden.
+      // ambient.js loads deferred, so init on DOMContentLoaded (after it runs).
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.SarahAmbient) window.SarahAmbient.init(document.body.dataset.studioBase || '');
+      });
+    });
   </script>
+  <script src={`${base}/js/ambient.js`} defer></script>
 
   <!-- The Studio: Sarah's editing world. Dormant until she taps "Studio". -->
   <script type="module">

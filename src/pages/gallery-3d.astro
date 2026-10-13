@@ -1,0 +1,332 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+
+const base = import.meta.env.BASE_URL;
+const artworks = await getCollection('artworks');
+
+function slugOf(id: string) { return id.replace(/\.md$/, ''); }
+
+// Up to 12 pieces for the room — featured first, then by order.
+const chosen = [...artworks]
+  .sort((a, b) => ((b.data.featured ? 1 : 0) - (a.data.featured ? 1 : 0)) || ((a.data.order || 0) - (b.data.order || 0)))
+  .slice(0, 12)
+  .map((a) => ({
+    src: a.data.image?.src ?? '',
+    title: a.data.title,
+    year: a.data.year,
+    slug: slugOf(a.id),
+  }));
+---
+
+<Base title="3D Gallery" description="Step into a quiet 3D gallery room to wander among Sarah Blachly's artwork.">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+      }
+    }
+  </script>
+
+  <section style="padding: 1.5rem 0 2.5rem;">
+    <div class="room-ui">
+      <div>
+        <h1 class="room-title">3D Gallery <span>— a quiet room</span></h1>
+        <p class="room-hint">click the floor to wander · drag to look · scroll to drift closer</p>
+      </div>
+      <a class="room-back" href={`${base}/work/`}>← back to the gallery</a>
+    </div>
+    <div id="room3d" class="room-stage" aria-label="Interactive 3D gallery room">
+      <div id="room3d-fallback" class="room-fallback" hidden>
+        <p>This little room needs WebGL to render — your browser doesn't seem to offer it.</p>
+        <p><a href={`${base}/work/`}>The regular gallery works everywhere.</a></p>
+      </div>
+    </div>
+  </section>
+
+  <script type="application/json" id="room3d-data" set:html={JSON.stringify(chosen)} />
+
+  <style>
+    .room-ui {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
+      flex-wrap: wrap; margin-bottom: 1rem;
+    }
+    .room-title { margin: 0; font-size: 1.6rem; }
+    .room-title span { font-size: 1.05rem; color: var(--text-dim); font-style: italic; }
+    .room-hint { margin: 0.25rem 0 0; color: var(--text-dim); font-size: 0.9rem; }
+    .room-back {
+      border: 1px solid rgba(143,184,255,0.35); border-radius: 999px;
+      padding: 0.45rem 1.1rem; font-size: 0.9rem; white-space: nowrap;
+    }
+    .room-back:hover { text-decoration: none; background: rgba(143,184,255,0.12); }
+    .room-stage {
+      position: relative; width: 100%; height: min(72vh, 640px);
+      border-radius: 14px; overflow: hidden;
+      border: 1px solid rgba(143,184,255,0.2);
+      background: #f4f2ee;
+      touch-action: none;
+    }
+    .room-stage canvas { display: block; width: 100%; height: 100%; }
+    .room-fallback {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 0.5rem;
+      text-align: center; color: #334; padding: 2rem;
+    }
+    .room-fallback a { color: #1c5d99; }
+  </style>
+
+  <script type="module">
+    // Pinned CDN copy of three@0.160.0. The full URL (not the bare "three"
+    // specifier) plus @vite-ignore keeps Astro's build-time bundler from
+    // trying to resolve it as an npm package — it loads in the browser only.
+    const THREE = await import(/* @vite-ignore */ 'https://unpkg.com/three@0.160.0/build/three.module.js');
+
+    const stage = document.getElementById('room3d');
+    const fallback = document.getElementById('room3d-fallback');
+    const items = JSON.parse(document.getElementById('room3d-data').textContent || '[]');
+
+    // --- WebGL guard: friendly fallback, page still builds and serves ---
+    const probe = document.createElement('canvas');
+    if (!(probe.getContext('webgl2') || probe.getContext('webgl'))) {
+      fallback.hidden = false;
+    } else {
+      initRoom();
+    }
+
+    function initRoom() {
+      // Room dimensions
+      const ROOM = { w: 26, d: 18, h: 7 };
+      const EYE = 1.7;
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      stage.appendChild(renderer.domElement);
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xf5f3ef);
+      scene.fog = new THREE.Fog(0xf5f3ef, 30, 70);
+
+      const camera = new THREE.PerspectiveCamera(62, 1, 0.1, 200);
+      const startPos = new THREE.Vector3(0, EYE, 7.5);
+      camera.position.copy(startPos);
+      let yaw = 0, pitch = 0;
+
+      // --- Soft gallery lighting ---
+      scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+      const sun = new THREE.DirectionalLight(0xfff6ea, 1.6);
+      sun.position.set(10, 14, 8);
+      sun.castShadow = true;
+      sun.shadow.mapSize.set(2048, 2048);
+      sun.shadow.camera.left = -20; sun.shadow.camera.right = 20;
+      sun.shadow.camera.top = 20; sun.shadow.camera.bottom = -20;
+      sun.shadow.bias = -0.0004;
+      scene.add(sun);
+      const fill = new THREE.PointLight(0xeaf0ff, 25, 40, 1.8);
+      fill.position.set(0, 5.5, 0);
+      scene.add(fill);
+
+      // --- The room: white walls, light floor ---
+      const wallMat = new THREE.MeshStandardMaterial({ color: 0xfbfaf8, roughness: 0.95 });
+      const floorMat = new THREE.MeshStandardMaterial({ color: 0xe9e4da, roughness: 0.9 });
+      const { w, d, h } = ROOM;
+
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, d), floorMat);
+      floor.rotation.x = -Math.PI / 2;
+      floor.receiveShadow = true;
+      scene.add(floor);
+
+      const mkWall = (pw, ph, x, y, z, ry) => {
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), wallMat);
+        m.position.set(x, y, z); m.rotation.y = ry; m.receiveShadow = true;
+        scene.add(m);
+      };
+      mkWall(w, h, 0, h / 2, -d / 2, 0);            // back
+      mkWall(w, h, 0, h / 2, d / 2, Math.PI);       // front (behind start camera)
+      mkWall(d, h, -w / 2, h / 2, 0, Math.PI / 2);  // left
+      mkWall(d, h, w / 2, h / 2, 0, -Math.PI / 2);  // right
+
+      // Skirting boards, for a finished feel
+      const skirtMat = new THREE.MeshStandardMaterial({ color: 0xded9ce, roughness: 0.8 });
+      const mkSkirt = (len, x, z, ry) => {
+        const s = new THREE.Mesh(new THREE.BoxGeometry(len, 0.18, 0.06), skirtMat);
+        s.position.set(x, 0.09, z); s.rotation.y = ry; scene.add(s);
+      };
+      mkSkirt(w, 0, -d / 2 + 0.03, 0); mkSkirt(w, 0, d / 2 - 0.03, 0);
+      mkSkirt(d, -w / 2 + 0.03, 0, Math.PI / 2); mkSkirt(d, w / 2 - 0.03, 0, Math.PI / 2);
+
+      // --- Artwork textures: cover-fit onto canvas; gradient placeholder on failure ---
+      const texLoader = new THREE.TextureLoader();
+      texLoader.setCrossOrigin('anonymous');
+
+      function placeholderTexture(title) {
+        const c = document.createElement('canvas'); c.width = 512; c.height = 640;
+        const g = c.getContext('2d');
+        const grad = g.createLinearGradient(0, 0, 512, 640);
+        grad.addColorStop(0, '#dfe8f5'); grad.addColorStop(0.5, '#efe6f4'); grad.addColorStop(1, '#dcefe6');
+        g.fillStyle = grad; g.fillRect(0, 0, 512, 640);
+        g.fillStyle = 'rgba(60,70,90,0.75)';
+        g.font = 'italic 28px Georgia, serif'; g.textAlign = 'center';
+        g.fillText(title || 'Untitled', 256, 330, 460);
+        const t = new THREE.CanvasTexture(c);
+        t.colorSpace = THREE.SRGBColorSpace;
+        return t;
+      }
+
+      function loadArtTexture(item, onReady) {
+        if (!item.src) { onReady(placeholderTexture(item.title)); return; }
+        texLoader.load(
+          item.src,
+          (tex) => {
+            // cover-fit the image onto a fixed canvas so frames never stretch
+            tex.colorSpace = THREE.SRGBColorSpace;
+            const img = tex.image;
+            const c = document.createElement('canvas'); c.width = 512; c.height = 640;
+            const g = c.getContext('2d');
+            const s = Math.max(512 / img.width, 640 / img.height);
+            const dw = img.width * s, dh = img.height * s;
+            g.drawImage(img, (512 - dw) / 2, (640 - dh) / 2, dw, dh);
+            const out = new THREE.CanvasTexture(c);
+            out.colorSpace = THREE.SRGBColorSpace;
+            out.anisotropy = 4;
+            tex.dispose();
+            onReady(out);
+          },
+          undefined,
+          () => onReady(placeholderTexture(item.title))
+        );
+      }
+
+      // --- Hang the frames ---
+      const frameMat = new THREE.MeshStandardMaterial({ color: 0x2b2620, roughness: 0.5, metalness: 0.15 });
+      const FW = 2.1, FH = 2.625, DEPTH = 0.09, HANG_Y = 3.4, OFF = 0.12;
+
+      function hangFrame(item, x, z, ry) {
+        const group = new THREE.Group();
+        const frame = new THREE.Mesh(new THREE.BoxGeometry(FW + 0.16, FH + 0.16, DEPTH), frameMat);
+        frame.castShadow = true;
+        const art = new THREE.Mesh(
+          new THREE.PlaneGeometry(FW, FH),
+          new THREE.MeshStandardMaterial({ roughness: 0.85 })
+        );
+        art.position.z = DEPTH / 2 + 0.005;
+        group.add(frame, art);
+        group.position.set(x, HANG_Y, z);
+        group.rotation.y = ry;
+        scene.add(group);
+        loadArtTexture(item, (tex) => { art.material.map = tex; art.material.needsUpdate = true; });
+
+        // Small wall label
+        const labelC = document.createElement('canvas'); labelC.width = 256; labelC.height = 48;
+        const lg = labelC.getContext('2d');
+        lg.fillStyle = '#fbfaf8'; lg.fillRect(0, 0, 256, 48);
+        lg.fillStyle = '#555'; lg.font = '15px Georgia, serif'; lg.textAlign = 'center';
+        lg.fillText(item.title + (item.year ? ' · ' + item.year : ''), 128, 30, 240);
+        const labelTex = new THREE.CanvasTexture(labelC);
+        labelTex.colorSpace = THREE.SRGBColorSpace;
+        const label = new THREE.Mesh(
+          new THREE.PlaneGeometry(1.5, 0.28),
+          new THREE.MeshBasicMaterial({ map: labelTex })
+        );
+        label.position.set(0, -(FH + 0.16) / 2 - 0.28, 0.001);
+        group.add(label);
+      }
+
+      // Distribute frames around the walls
+      const spots = [];
+      const backSpots = 4, frontSpots = 2, sideSpots = 3;
+      for (let i = 0; i < backSpots; i++)
+        spots.push({ x: -w / 2 + 3.2 + (i * (w - 6.4)) / (backSpots - 1), z: -d / 2 + OFF, ry: 0 });
+      for (let i = 0; i < frontSpots; i++)
+        spots.push({ x: -4.5 + i * 9, z: d / 2 - OFF, ry: Math.PI });
+      for (let i = 0; i < sideSpots; i++) {
+        spots.push({ x: -w / 2 + OFF, z: -d / 2 + 3.4 + (i * (d - 6.8)) / (sideSpots - 1), ry: Math.PI / 2 });
+        spots.push({ x: w / 2 - OFF, z: -d / 2 + 3.4 + (i * (d - 6.8)) / (sideSpots - 1), ry: -Math.PI / 2 });
+      }
+      items.slice(0, spots.length).forEach((item, i) => {
+        const s = spots[i];
+        hangFrame(item, s.x, s.z, s.ry);
+      });
+
+      // --- Simple forgiving controls: click floor to wander, drag to look, scroll to dolly ---
+      const raycaster = new THREE.Raycaster();
+      const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+      const moveTarget = startPos.clone();
+      const ndc = new THREE.Vector2();
+      let dragging = false, moved = 0, lastX = 0, lastY = 0;
+      const el = renderer.domElement;
+
+      const setNDC = (e) => {
+        const r = el.getBoundingClientRect();
+        ndc.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+        ndc.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+      };
+
+      el.addEventListener('pointerdown', (e) => {
+        dragging = true; moved = 0; lastX = e.clientX; lastY = e.clientY;
+        el.setPointerCapture(e.pointerId);
+      });
+      el.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const dx = e.clientX - lastX, dy = e.clientY - lastY;
+        moved += Math.abs(dx) + Math.abs(dy);
+        lastX = e.clientX; lastY = e.clientY;
+        yaw -= dx * 0.0042;
+        pitch = Math.max(-1.2, Math.min(1.2, pitch - dy * 0.0032));
+      });
+      el.addEventListener('pointerup', (e) => {
+        dragging = false;
+        if (moved < 8) {
+          // A tap, not a drag: walk to that floor spot
+          setNDC(e);
+          raycaster.setFromCamera(ndc, camera);
+          const hit = new THREE.Vector3();
+          if (raycaster.ray.intersectPlane(floorPlane, hit)) {
+            moveTarget.set(
+              Math.max(-w / 2 + 1, Math.min(w / 2 - 1, hit.x)),
+              EYE,
+              Math.max(-d / 2 + 1, Math.min(d / 2 - 1, hit.z))
+            );
+          }
+        }
+      });
+      el.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const dir = new THREE.Vector3();
+        camera.getWorldDirection(dir);
+        dir.y = 0; dir.normalize().multiplyScalar(-e.deltaY * 0.006);
+        moveTarget.add(dir);
+        moveTarget.x = Math.max(-w / 2 + 1, Math.min(w / 2 - 1, moveTarget.x));
+        moveTarget.z = Math.max(-d / 2 + 1, Math.min(d / 2 - 1, moveTarget.z));
+        moveTarget.y = EYE;
+      }, { passive: false });
+
+      // --- Resize + render loop ---
+      const resize = () => {
+        const r = stage.getBoundingClientRect();
+        renderer.setSize(r.width, r.height, false);
+        camera.aspect = r.width / r.height;
+        camera.updateProjectionMatrix();
+      };
+      window.addEventListener('resize', resize);
+      resize();
+
+      const lookDir = new THREE.Vector3();
+      renderer.setAnimationLoop(() => {
+        // Gentle tween toward the tapped spot
+        camera.position.lerp(moveTarget, 0.06);
+        if (camera.position.distanceTo(moveTarget) < 0.02) camera.position.copy(moveTarget);
+        lookDir.set(
+          Math.sin(yaw) * Math.cos(pitch),
+          Math.sin(pitch),
+          -Math.cos(yaw) * Math.cos(pitch)
+        );
+        camera.lookAt(camera.position.clone().add(lookDir));
+        renderer.render(scene, camera);
+      });
+    }
+  </script>
+</Base>
