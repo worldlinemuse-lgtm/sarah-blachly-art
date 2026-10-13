@@ -93,9 +93,13 @@ export async function commitFiles(files, message) {
   const baseCommit = await api(`/repos/${REPO.owner}/${REPO.repo}/git/commits/${baseCommitSha}`);
   const baseTreeSha = baseCommit.tree.sha;
 
-  // 2. Turn each file into a blob
+  // 2. Turn each file into a blob (null content = delete the path)
   const tree = [];
   for (const f of files) {
+    if (f.content == null) {
+      tree.push({ path: f.path, mode: '100644', type: 'blob', sha: null });
+      continue;
+    }
     const blob = await api(`/repos/${REPO.owner}/${REPO.repo}/git/blobs`, {
       method: 'POST',
       body: {
