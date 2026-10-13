@@ -46,6 +46,7 @@ export function summarize() {
     if (path.includes('/artworks/')) lines.push('Artwork updated: ' + fileLabel(path));
     else if (path.includes('site.json')) lines.push('Site wording & colors updated');
     else if (path.includes('about.md')) lines.push('About page updated');
+    else if (path.includes('whiteboard')) lines.push('Whiteboard post');
     else if (path.includes('background.png')) lines.push('Background repainted');
     else if (path.includes('signature.png')) lines.push('Signature updated');
     else lines.push('Updated: ' + path);

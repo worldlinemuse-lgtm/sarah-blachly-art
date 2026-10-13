@@ -16,6 +16,20 @@ const { title, year, medium, dimensions, description, alt } = artwork.data;
 const img = artwork.data.image;
 const base = import.meta.env.BASE_URL;
 const hasSignature = fs.existsSync('public/images/studio/signature.png');
+import siteSettings from '../../content/settings/site.json';
+const sig = siteSettings.signature || { position: 'bottom-right', size: 160 };
+const SIG_POS = {
+  'top-left': 'top:4%;left:4%;',
+  'top-center': 'top:4%;left:50%;transform:translateX(-50%);',
+  'top-right': 'top:4%;right:4%;',
+  'middle-left': 'top:50%;left:4%;transform:translateY(-50%);',
+  'center': 'top:50%;left:50%;transform:translate(-50%,-50%);',
+  'middle-right': 'top:50%;right:4%;transform:translateY(-50%);',
+  'bottom-left': 'bottom:4%;left:4%;',
+  'bottom-center': 'bottom:4%;left:50%;transform:translateX(-50%);',
+  'bottom-right': 'bottom:4%;right:4%;',
+};
+const sigStyle = `position:absolute;${SIG_POS[sig.position] || SIG_POS['bottom-right']}max-width:${sig.size || 160}px;opacity:0.92;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.55));pointer-events:none;`;
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -39,18 +53,20 @@ const jsonLd = {
       {medium && ` · ${medium}`}
       {dimensions && dimensions !== '—' && ` · ${dimensions}`}
     </p>
-    <img
-      src={img.src}
-      alt={alt}
-      style="width:100%; border-radius: 12px; border: 1px solid rgba(143,184,255,0.2); box-shadow: 0 0 60px rgba(168,216,255,0.08);"
-    />
-    {hasSignature && (
+    <div style="position:relative;">
       <img
-        src={`${base}/images/studio/signature.png`}
-        alt="Signed by the artist"
-        style="display:block; margin: 1rem 0 0 auto; max-width: 220px; opacity: 0.9;"
+        src={img.src}
+        alt={alt}
+        style="width:100%; border-radius: 12px; border: 1px solid rgba(143,184,255,0.2); box-shadow: 0 0 60px rgba(168,216,255,0.08); display:block;"
       />
-    )}
+      {hasSignature && (
+        <img
+          src={`${base}/images/studio/signature.png`}
+          alt="Signed by the artist"
+          style={sigStyle}
+        />
+      )}
+    </div>
     {description && <p style="margin-top: 1.5rem; max-width: 640px;">{description}</p>}
   </article>
 </Base>

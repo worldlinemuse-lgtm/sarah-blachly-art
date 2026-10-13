@@ -45,6 +45,7 @@ const hasSignature = fs.existsSync('public/images/studio/signature.png');
       <ul>
         <li><a href={`${base}/work/`}>Work</a></li>
         <li><a href={`${base}/about/`}>About</a></li>
+        <li><a href={`${base}/whiteboard/`}>Whiteboard</a></li>
         <li><a href={`${base}/process/`}>Process</a></li>
         <li><a href={`${base}/contact/`}>Contact</a></li>
       </ul>
@@ -86,72 +87,108 @@ const hasSignature = fs.existsSync('public/images/studio/signature.png');
       text-shadow: 0 0 24px rgba(255, 200, 150, 0.25);
       margin-bottom: 1rem;
     }
-    /* Light wispy border: glowing line along the bottom, branching up the left side */
-    .wispy-border {
+    /* Wispy vine — a delicate luminous tendril climbing the bottom of the page
+       and up the right side. Pure background depth: never interactive. */
+    .wispy-vine {
       position: fixed;
       left: 0; right: 0; bottom: 0;
-      height: 3px;
-      z-index: 3;
+      height: min(38vh, 340px);
+      width: 100%;
+      z-index: 1;
       pointer-events: none;
-      background: linear-gradient(90deg,
-        transparent,
-        rgba(255, 180, 120, 0.35) 20%,
-        rgba(255, 220, 170, 0.5) 50%,
-        rgba(255, 180, 120, 0.35) 80%,
-        transparent);
-      filter: blur(1px);
+      opacity: 0.55;
     }
-    .wispy-branch {
-      position: fixed;
-      left: 0; top: 0; bottom: 0;
-      width: 120px;
-      z-index: 0;
-      pointer-events: none;
-      opacity: 0.5;
-      background:
-        radial-gradient(2px 2px at 20px 80%, rgba(168, 255, 200, 0.5), transparent),
-        radial-gradient(3px 3px at 45px 65%, rgba(255, 200, 140, 0.4), transparent),
-        radial-gradient(2px 2px at 30px 50%, rgba(168, 255, 200, 0.35), transparent),
-        radial-gradient(4px 4px at 60px 35%, rgba(255, 200, 140, 0.3), transparent),
-        radial-gradient(2px 2px at 25px 20%, rgba(168, 255, 200, 0.3), transparent);
+    @media (prefers-reduced-motion: reduce) {
+      .wispy-vine .drift { animation: none; }
     }
-    .wispy-branch::before {
-      content: "";
-      position: absolute;
-      left: 12px; top: 5%; bottom: 5%;
-      width: 2px;
-      background: linear-gradient(180deg,
-        transparent,
-        rgba(150, 220, 170, 0.25) 30%,
-        rgba(255, 200, 140, 0.35) 70%,
-        rgba(255, 200, 140, 0.5));
-      filter: blur(1.5px);
-      border-radius: 2px;
+    .wispy-vine .drift {
+      animation: vine-sway 14s ease-in-out infinite alternate;
+      transform-origin: bottom center;
+    }
+    @keyframes vine-sway {
+      from { transform: translateX(-6px); }
+      to { transform: translateX(6px); }
     }
   </style>
-  <div class="wispy-branch" aria-hidden="true"></div>
-  <div class="wispy-border" aria-hidden="true"></div>
+  <svg class="wispy-vine" viewBox="0 0 1440 340" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs>
+      <linearGradient id="vineA" x1="0" y1="1" x2="1" y2="0">
+        <stop offset="0" stop-color="#a8d8ff" stop-opacity="0"/>
+        <stop offset="0.45" stop-color="#a8d8ff" stop-opacity="0.28"/>
+        <stop offset="0.8" stop-color="#d8b8ff" stop-opacity="0.42"/>
+        <stop offset="1" stop-color="#d8b8ff" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="vineB" x1="1" y1="1" x2="1" y2="0">
+        <stop offset="0" stop-color="#a8ffd8" stop-opacity="0"/>
+        <stop offset="0.5" stop-color="#a8ffd8" stop-opacity="0.3"/>
+        <stop offset="1" stop-color="#a8d8ff" stop-opacity="0.45"/>
+      </linearGradient>
+      <radialGradient id="budGlow">
+        <stop offset="0" stop-color="#eaf4ff" stop-opacity="0.9"/>
+        <stop offset="0.4" stop-color="#a8d8ff" stop-opacity="0.35"/>
+        <stop offset="1" stop-color="#a8d8ff" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <g class="drift" fill="none" stroke-linecap="round">
+      <!-- tendrils wandering along the bottom -->
+      <path d="M-40,340 C180,322 260,286 430,308 S700,336 880,306 S1180,272 1480,322"
+            stroke="url(#vineA)" stroke-width="1.6"/>
+      <path d="M-40,340 C140,330 220,312 360,322 S620,340 780,322"
+            stroke="url(#vineB)" stroke-width="1.1" opacity="0.7"/>
+      <path d="M240,340 C300,300 280,270 340,250 S420,240 430,200"
+            stroke="url(#vineA)" stroke-width="1.2" opacity="0.8"/>
+      <path d="M700,340 C740,310 730,290 780,275 S850,265 860,230"
+            stroke="url(#vineB)" stroke-width="1" opacity="0.7"/>
+      <!-- the climbing vine, up the right side -->
+      <path d="M1330,340 C1310,260 1370,230 1345,150 S1320,70 1365,-10"
+            stroke="url(#vineA)" stroke-width="1.8"/>
+      <path d="M1330,340 C1290,280 1240,260 1255,200 S1290,150 1270,110"
+            stroke="url(#vineB)" stroke-width="1.1" opacity="0.75"/>
+      <path d="M1345,150 C1380,140 1400,120 1395,95"
+            stroke="url(#vineA)" stroke-width="1" opacity="0.7"/>
+      <!-- curls -->
+      <path d="M430,308 c26,-4 30,-34 8,-40 c-18,-5 -30,12 -18,24"
+            stroke="url(#vineB)" stroke-width="1" opacity="0.8"/>
+      <path d="M880,306 c-24,-6 -26,-34 -6,-38 c16,-3 26,14 15,25"
+            stroke="url(#vineA)" stroke-width="1" opacity="0.8"/>
+      <path d="M1345,150 c20,-8 22,-32 4,-36 c-15,-3 -24,13 -13,23"
+            stroke="url(#vineB)" stroke-width="1" opacity="0.8"/>
+    </g>
+    <g fill="url(#budGlow)">
+      <circle cx="340" cy="250" r="7"/>
+      <circle cx="430" cy="200" r="5"/>
+      <circle cx="780" cy="275" r="6"/>
+      <circle cx="860" cy="230" r="4.5"/>
+      <circle cx="1255" cy="200" r="6"/>
+      <circle cx="1395" cy="95" r="5"/>
+      <circle cx="180" cy="318" r="4"/>
+      <circle cx="1050" cy="296" r="4.5"/>
+    </g>
+  </svg>
 
   <script>
-    // Star field: warm embers — reds, oranges, yellows, greens, ~1% blue.
-    // Softer at the top of the sky, stronger toward the bottom.
+    // Star field: quiet fairy dust — moon white, prism blue, lilac, mint,
+    // with rare warm gold embers. Softer at the top, a little stronger below.
     (function () {
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       const container = document.getElementById('stars');
       const palette = [
-        [255, 120, 80],   // red
-        [255, 150, 90],   // red-orange
-        [255, 180, 110],  // orange
-        [255, 210, 140],  // yellow-orange
-        [255, 230, 170],  // yellow
-        [170, 255, 190],  // green
-        [140, 230, 170],  // deep green
-        [150, 180, 255],  // blue (~1% of picks)
+        [234, 242, 255],  // moon white
+        [200, 222, 255],  // starlight
+        [168, 216, 255],  // prism blue
+        [216, 184, 255],  // fairy lilac
+        [168, 255, 216],  // mint glow
+        [255, 210, 140],  // gold dust (rare warm)
+        [255, 154, 110],  // ember (rarest warm)
       ];
+      const weights = [0.24, 0.2, 0.18, 0.14, 0.12, 0.08, 0.04];
       function pickColor() {
-        // ~1% blue: only pick the last entry on a 1-in-100 roll
-        if (Math.random() < 0.01) return palette[7];
-        return palette[Math.floor(Math.random() * 7)];
+        let r = Math.random(), acc = 0;
+        for (let i = 0; i < weights.length; i++) {
+          acc += weights[i];
+          if (r <= acc) return palette[i];
+        }
+        return palette[0];
       }
       function layer(count, size) {
         const el = document.createElement('div');
@@ -186,13 +223,13 @@ const hasSignature = fs.existsSync('public/images/studio/signature.png');
     const base = document.body.dataset.studioBase;
     const studio = await import(`${base}/studio/studio.js`);
     const drag = await import(`${base}/studio/drag.js`);
-    const text = await import(`${base}/studio/text.js`);
-    const paint = await import(`${base}/studio/paint.js`);
+    const whiteboard = await import(`${base}/studio/whiteboard.js`);
+    const content = await import(`${base}/studio/content.js`);
     const sign = await import(`${base}/studio/sign.js`);
     const add = await import(`${base}/studio/add.js`);
     studio.registerMode('arrange', { enter: drag.enter, exit: drag.exit });
-    studio.registerMode('write', { enter: text.enter, exit: text.exit });
-    studio.registerMode('paint', { enter: paint.enter, exit: paint.exit });
+    studio.registerMode('whiteboard', { enter: whiteboard.enter, exit: whiteboard.exit });
+    studio.registerMode('content', { enter: content.enter, exit: content.exit });
     studio.registerMode('sign', { enter: sign.enter, exit: sign.exit });
     studio.registerMode('add', { enter: add.enter, exit: add.exit });
   </script>

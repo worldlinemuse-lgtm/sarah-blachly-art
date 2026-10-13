@@ -44,6 +44,15 @@ export async function verifyToken() {
   return true;
 }
 
+/** List a directory in the repo. Returns [{name, path, type}] or []. */
+export async function listDir(path) {
+  const data = await api(
+    `/repos/${REPO.owner}/${REPO.repo}/contents/${path}?ref=${REPO.branch}`
+  );
+  if (!Array.isArray(data)) return [];
+  return data.map((d) => ({ name: d.name, path: d.path, type: d.type }));
+}
+
 /** Read a text file from the repo. Returns {content, sha} or null. */
 export async function getFile(path) {
   try {

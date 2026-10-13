@@ -97,8 +97,8 @@ function buildToolbar() {
   const bar = el(`<div class="studio-toolbar" hidden></div>`);
   const buttons = [
     ['arrange', 'Arrange'],
-    ['paint', 'Paint'],
-    ['write', 'Write'],
+    ['whiteboard', 'Whiteboard'],
+    ['content', 'Content'],
     ['sign', 'Sign'],
     ['add', 'Add art'],
   ];
@@ -143,6 +143,10 @@ export function setMode(id) {
 }
 
 /* ---------- publish ---------- */
+
+export async function publishNow() {
+  await publish();
+}
 
 async function publish() {
   if (!hasChanges()) return;

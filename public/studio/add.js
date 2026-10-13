@@ -1,10 +1,11 @@
 /* Add mode — a new artwork, start to finish, without leaving the gallery. */
 import { writeText, writeBinary, readFile } from './store.js';
-import { toast, refreshToolbar } from './studio.js';
+import { toast, refreshToolbar, publishNow } from './studio.js';
 
 let overlay = null;
 
-const FALLBACK_SERIES = [
+/* The canonical categories — always the full list, on every page. */
+const CATEGORIES = [
   ['dragons', 'Dragons'],
   ['abstract', 'Abstract'],
   ['characters-ocs', 'Characters & OCs'],
@@ -13,12 +14,7 @@ const FALLBACK_SERIES = [
 ];
 
 export function enter() {
-  const series = [...document.querySelectorAll('[data-studio-series]')].map((s) => {
-    const key = s.dataset.studioSeries;
-    const titleEl = s.querySelector('[data-studio-series-title]');
-    return [key, titleEl ? titleEl.textContent.trim() : key];
-  });
-  const options = (series.length ? series : FALLBACK_SERIES)
+  const options = CATEGORIES
     .map(([v, l]) => `<option value="${v}">${l}</option>`)
     .join('');
 
@@ -110,15 +106,45 @@ export function enter() {
         '',
       ].filter((l) => l !== null).join('\n');
       writeText(`src/content/artworks/${slug}.md`, fm);
-      toast(`“${title}” added. Publish to make it live.`);
       refreshToolbar();
       exit();
+      showAdded(title);
     } catch (e) {
       console.error(e);
       fail('Couldn\u2019t add it: ' + e.message);
     }
     function fail(m) { err.hidden = false; err.textContent = m; }
   };
+}
+
+/* After adding: offer Publish right here, so she never hunts for it. */
+function showAdded(title) {
+  const card = document.createElement('div');
+  card.className = 'studio-overlay';
+  card.innerHTML = `
+    <div class="studio-card" style="max-width:420px; text-align:center;">
+      <h2>“${escapeHtml(title)}” is ready</h2>
+      <p>It's saved in your Studio. Publish now to put it on your site,<br/>or keep editing and publish everything later.</p>
+      <div class="studio-card-actions" style="justify-content:center;">
+        <button class="studio-btn studio-btn-primary" data-act="pub">Publish now</button>
+        <button class="studio-btn" data-act="later">Keep editing</button>
+      </div>
+    </div>`;
+  document.body.appendChild(card);
+  card.querySelector('[data-act="later"]').onclick = () => card.remove();
+  card.querySelector('[data-act="pub"]').onclick = async () => {
+    card.remove();
+    await publishNow();
+  };
+  card.addEventListener('click', (e) => {
+    if (e.target === card) card.remove();
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
 }
 
 export function exit() {
