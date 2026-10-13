@@ -138,7 +138,9 @@ export async function enter() {
     data.medium = g('medium');
     data.dimensions = g('dimensions');
     data.description = g('description');
-    writeText(`${ART_DIR}/${it.name}`, stringifyFM(data, body, order));
+    const text = stringifyFM(data, body, order);
+    writeText(`${ART_DIR}/${it.name}`, text);
+    it.raw = text;
     it.data = data;
     toast('Details saved. Publish to make it live.');
     refreshToolbar();
