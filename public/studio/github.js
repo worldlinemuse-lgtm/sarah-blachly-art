@@ -119,7 +119,7 @@ export async function commitFiles(files, message) {
       parents: [baseCommitSha],
     },
   });
-  await api(`/repos/${REPO.owner}/${REPO.repo}/git/ref/heads/${REPO.branch}`, {
+  await api(`/repos/${REPO.owner}/${REPO.repo}/git/refs/heads/${REPO.branch}`, {
     method: 'PATCH',
     body: { sha: commit.sha },
   });
