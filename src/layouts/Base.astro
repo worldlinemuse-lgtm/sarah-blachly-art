@@ -1,14 +1,31 @@
 ---
 import '../styles/global.css';
+import { ClientRouter } from 'astro:transitions';
+import { getCollection } from 'astro:content';
 import siteSettings from '../content/settings/site.json';
 import fs from 'node:fs';
 
 interface Props {
   title: string;
   description?: string;
+  ogImage?: string;
+  ogType?: string;
 }
 
-const { title, description = 'Art portfolio of Sarah Blachly — self-taught artist.' } = Astro.props;
+const { title, description = 'Art portfolio of Sarah Blachly — self-taught artist.', ogImage, ogType = 'website' } = Astro.props;
+const siteOrigin = 'https://worldlinemuse-lgtm.github.io';
+const pageUrl = siteOrigin + Astro.url.pathname;
+
+// Site-default social image: her flagship piece (first featured artwork),
+// so shared links unfurl as her art even on pages without their own image.
+let defaultOgImage: string | undefined;
+try {
+  const artworks = await getCollection('artworks');
+  const flagship = artworks.find((a) => a.data.featured) ?? artworks[0];
+  const src = flagship?.data.image?.src;
+  if (src) defaultOgImage = siteOrigin + (src.startsWith('/') ? src : '/' + src);
+} catch { /* no artworks yet — no default image */ }
+const socialImage = ogImage ?? defaultOgImage;
 const base = import.meta.env.BASE_URL;
 const c = siteSettings.colors;
 const hasPaintedBg = fs.existsSync('public/images/studio/background.png');
@@ -31,6 +48,19 @@ const navLinks = [
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{title} | Sarah Blachly — Art Portfolio</title>
   <meta name="description" content={description} />
+  <meta name="theme-color" content="#0a0e1a" />
+  <link rel="canonical" href={pageUrl} />
+  <ClientRouter />
+  <meta property="og:site_name" content="Sarah Blachly — Art Portfolio" />
+  <meta property="og:title" content={`${title} | Sarah Blachly — Art Portfolio`} />
+  <meta property="og:description" content={description} />
+  <meta property="og:type" content={ogType} />
+  <meta property="og:url" content={pageUrl} />
+  {socialImage && <meta property="og:image" content={socialImage} />}
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={`${title} | Sarah Blachly — Art Portfolio`} />
+  <meta name="twitter:description" content={description} />
+  {socialImage && <meta name="twitter:image" content={socialImage} />}
   <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
   <link rel="stylesheet" href={`${base}/studio/studio.css`} />
   <style define:vars={{ nightBlue: c.nightBlue, purpleGlow: c.purpleGlow, forestGreen: c.forestGreen }}>
@@ -44,13 +74,15 @@ const navLinks = [
   </style>
 </head>
 <body data-studio-base={base}>
+  <a class="skip-link" href="#main-content">Skip to content</a>
   <div class="nebula" aria-hidden="true"></div>
   <div class="ambient-wash" aria-hidden="true"></div>
   <div class="milky-way" aria-hidden="true"></div>
-  <canvas id="fireflies" aria-hidden="true"></canvas>
+  <canvas id="fireflies" aria-hidden="true" transition:persist></canvas>
+  <canvas id="raked-sand" aria-hidden="true" transition:persist></canvas>
 
   <div class="wrap">
-    <nav class="site-nav" aria-label="Main navigation">
+    <nav class="site-nav" aria-label="Main navigation" transition:persist>
       <a class="brand" href={`${base}/`}>Sarah Blachly</a>
       <button class="nav-toggle" aria-expanded="false" aria-controls="nav-menu" aria-label="Open menu">
         <span></span><span></span><span></span>
@@ -62,11 +94,11 @@ const navLinks = [
       </ul>
     </nav>
 
-    <main>
+    <main id="main-content">
       <slot />
     </main>
 
-    <footer>
+    <footer transition:persist>
       {siteSettings.commissionsOpen && (
         <p class="commissions-banner">{siteSettings.commissionsMessage} — <a href={`${base}/contact/`}>get in touch</a></p>
       )}
@@ -270,115 +302,165 @@ const navLinks = [
   </svg>
 
   <script>
-    // Fireflies: colorful drifting motes that twinkle at their own rates.
-    // ~15% are diamond-shaped. They float; nothing is fixed.
+    // Site chrome: fireflies, mobile menu, fade-in, footer year.
+    // View-transition safe: this classic script re-runs on every client-side
+    // navigation, so everything below is idempotent. The fireflies canvas,
+    // nav, and footer carry transition:persist — their elements (and the
+    // bindings from the first run) survive swaps.
     (function () {
-      const canvas = document.getElementById('fireflies');
-      const ctx = canvas.getContext('2d');
-      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const palette = [
-        [234, 242, 255], [200, 222, 255], [168, 216, 255],
-        [216, 184, 255], [168, 255, 216],
-        [255, 210, 140], [255, 154, 110], [150, 255, 200],
-      ];
-      const weights = [0.2, 0.17, 0.16, 0.13, 0.12, 0.08, 0.05, 0.09];
-      function pickColor() {
-        let r = Math.random(), acc = 0;
-        for (let i = 0; i < weights.length; i++) { acc += weights[i]; if (r <= acc) return palette[i]; }
-        return palette[0];
-      }
-      let W, H, parts = [];
-      function resize() {
-        W = canvas.width = window.innerWidth;
-        H = canvas.height = window.innerHeight;
-      }
-      function make() {
-        parts = [];
-        const n = Math.min(150, Math.floor((W * H) / 14000));
-        for (let i = 0; i < n; i++) {
-          const [r, g, b] = pickColor();
-          parts.push({
-            x: Math.random() * W, y: Math.random() * H,
-            vx: (Math.random() - 0.5) * 0.22, vy: (Math.random() - 0.5) * 0.18,
-            size: 0.8 + Math.random() * 1.8,
-            speed: 0.4 + Math.random() * 1.8,   // twinkle rate: each its own
-            phase: Math.random() * Math.PI * 2,
-            baseAlpha: 0.25 + Math.random() * 0.55,
-            diamond: Math.random() < 0.15,
-            color: `${r},${g},${b}`,
-          });
-        }
-      }
-      function draw(p, t) {
-        const tw = 0.2 + 0.8 * Math.abs(Math.sin(t * p.speed + p.phase));
-        const a = (p.baseAlpha * tw).toFixed(3);
-        ctx.fillStyle = `rgba(${p.color},${a})`;
-        if (p.diamond) {
-          const s = p.size * 1.4;
-          ctx.save();
-          ctx.translate(p.x, p.y);
-          ctx.rotate(Math.PI / 4);
-          ctx.fillRect(-s / 2, -s / 2, s, s);
-          ctx.restore();
-        } else {
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fill();
-          // soft halo
-          ctx.fillStyle = `rgba(${p.color},${(a * 0.25).toFixed(3)})`;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-      resize(); make();
-      window.addEventListener('resize', () => { resize(); make(); });
-      if (reduced) { // one still frame: quiet, no motion
-        parts.forEach((p) => draw(p, 1.2));
-      } else {
-        (function tick(tms) {
-          const t = tms / 1000;
-          ctx.clearRect(0, 0, W, H);
-          for (const p of parts) {
-            p.x += p.vx; p.y += p.vy;
-            if (p.x < -10) p.x = W + 10; if (p.x > W + 10) p.x = -10;
-            if (p.y < -10) p.y = H + 10; if (p.y > H + 10) p.y = -10;
-            draw(p, t);
-          }
-          requestAnimationFrame(tick);
-        })(0);
+      initFirefliesOnce();
+      initPage();
+      initAmbientOnce();
+      if (!window.__sarahPageListener) {
+        window.__sarahPageListener = true;
+        document.addEventListener('astro:page-load', () => {
+          initPage();
+          // Curator's Whisper counts artwork views per navigation.
+          if (window.SarahAmbient) window.SarahAmbient.pageView(document.body.dataset.studioBase || '');
+        });
       }
 
-      // Mobile menu
-      const toggle = document.querySelector('.nav-toggle');
-      const menu = document.getElementById('nav-menu');
-      if (toggle && menu) {
-        toggle.addEventListener('click', () => {
-          const open = menu.classList.toggle('open');
-          toggle.setAttribute('aria-expanded', String(open));
-          toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
-        });
-        menu.querySelectorAll('a').forEach((a) =>
-          a.addEventListener('click', () => {
+      function initFirefliesOnce() {
+        if (window.__sarahFireflies) return;
+        window.__sarahFireflies = true;
+        // Fireflies: colorful drifting motes that twinkle at their own rates.
+        // ~15% are diamond-shaped. They float; nothing is fixed.
+        const canvas = document.getElementById('fireflies');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const palette = [
+          [234, 242, 255], [200, 222, 255], [168, 216, 255],
+          [216, 184, 255], [168, 255, 216],
+          [255, 210, 140], [255, 154, 110], [150, 255, 200],
+        ];
+        const weights = [0.2, 0.17, 0.16, 0.13, 0.12, 0.08, 0.05, 0.09];
+        function pickColor() {
+          let r = Math.random(), acc = 0;
+          for (let i = 0; i < weights.length; i++) { acc += weights[i]; if (r <= acc) return palette[i]; }
+          return palette[0];
+        }
+        let W, H, parts = [];
+        function resize() {
+          W = canvas.width = window.innerWidth;
+          H = canvas.height = window.innerHeight;
+        }
+        function make() {
+          parts = [];
+          const n = Math.min(150, Math.floor((W * H) / 14000));
+          for (let i = 0; i < n; i++) {
+            const [r, g, b] = pickColor();
+            parts.push({
+              x: Math.random() * W, y: Math.random() * H,
+              vx: (Math.random() - 0.5) * 0.22, vy: (Math.random() - 0.5) * 0.18,
+              size: 0.8 + Math.random() * 1.8,
+              speed: 0.4 + Math.random() * 1.8,   // twinkle rate: each its own
+              phase: Math.random() * Math.PI * 2,
+              baseAlpha: 0.25 + Math.random() * 0.55,
+              diamond: Math.random() < 0.15,
+              color: `${r},${g},${b}`,
+            });
+          }
+        }
+        function draw(p, t) {
+          const tw = 0.2 + 0.8 * Math.abs(Math.sin(t * p.speed + p.phase));
+          const a = (p.baseAlpha * tw).toFixed(3);
+          ctx.fillStyle = `rgba(${p.color},${a})`;
+          if (p.diamond) {
+            const s = p.size * 1.4;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(Math.PI / 4);
+            ctx.fillRect(-s / 2, -s / 2, s, s);
+            ctx.restore();
+          } else {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+            // soft halo
+            ctx.fillStyle = `rgba(${p.color},${(a * 0.25).toFixed(3)})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        resize(); make();
+        window.addEventListener('resize', () => { resize(); make(); });
+        if (reduced) { // one still frame: quiet, no motion
+          parts.forEach((p) => draw(p, 1.2));
+        } else {
+          (function tick(tms) {
+            const t = tms / 1000;
+            ctx.clearRect(0, 0, W, H);
+            for (const p of parts) {
+              p.x += p.vx; p.y += p.vy;
+              if (p.x < -10) p.x = W + 10; if (p.x > W + 10) p.x = -10;
+              if (p.y < -10) p.y = H + 10; if (p.y > H + 10) p.y = -10;
+              draw(p, t);
+            }
+            requestAnimationFrame(tick);
+          })(0);
+        }
+      }
+
+      function initPage() {
+        // Mobile menu
+        const toggle = document.querySelector('.nav-toggle');
+        const menu = document.getElementById('nav-menu');
+        if (toggle && menu && !toggle.dataset.sarahBound) {
+          toggle.dataset.sarahBound = '1';
+          const closeMenu = () => {
             menu.classList.remove('open');
             toggle.setAttribute('aria-expanded', 'false');
-          })
-        );
+            toggle.setAttribute('aria-label', 'Open menu');
+          };
+          toggle.addEventListener('click', () => {
+            const open = menu.classList.toggle('open');
+            toggle.setAttribute('aria-expanded', String(open));
+            toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+          });
+          menu.querySelectorAll('a').forEach((a) =>
+            a.addEventListener('click', closeMenu)
+          );
+          document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && menu.classList.contains('open')) {
+              closeMenu();
+              toggle.focus();
+            }
+          });
+        }
+
+        // Fade-in on scroll (subtle: drifts up, eases into full opacity)
+        if (!window.__sarahFadeObserver) {
+          window.__sarahFadeObserver = new IntersectionObserver((entries) => {
+            entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add('visible'); });
+          }, { threshold: 0.08 });
+        }
+        document.querySelectorAll('.fade-in:not([data-sarah-observed])').forEach((el) => {
+          el.dataset.sarahObserved = '1';
+          window.__sarahFadeObserver.observe(el);
+        });
+
+        const yearEl = document.getElementById('year');
+        if (yearEl) yearEl.textContent = new Date().getFullYear();
       }
 
-      // Fade-in on scroll (subtle: drifts up, eases into full opacity)
-      const io = new IntersectionObserver((entries) => {
-        entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add('visible'); });
-      }, { threshold: 0.08 });
-      document.querySelectorAll('.fade-in').forEach((el) => io.observe(el));
-
-      document.getElementById('year').textContent = new Date().getFullYear();
-
-      // Ambient extras: room tone, whisper, sand memory, memory garden.
-      // ambient.js loads deferred, so init on DOMContentLoaded (after it runs).
-      window.addEventListener('DOMContentLoaded', () => {
-        if (window.SarahAmbient) window.SarahAmbient.init(document.body.dataset.studioBase || '');
-      });
+      function initAmbientOnce() {
+        // ambient.js is an external script: it runs once per full page load,
+        // never on view-transition swaps. The footer persists, so its
+        // bindings (room tone, memory garden) survive with it.
+        if (window.__sarahAmbientInit) return;
+        const run = () => {
+          window.__sarahAmbientInit = true;
+          if (window.SarahAmbient) window.SarahAmbient.init(document.body.dataset.studioBase || '');
+        };
+        if (document.readyState === 'loading') {
+          window.addEventListener('DOMContentLoaded', run, { once: true });
+        } else {
+          run();
+        }
+      }
     });
   </script>
   <script src={`${base}/js/ambient.js`} defer></script>

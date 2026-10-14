@@ -311,3 +311,52 @@ footer {
    When she does, point EYEBALL below at it — one line, done.
    Until then, artworks get the regular pointer. */
 /* .art-card:hover { cursor: url('/images/eyeball.gif'), pointer; } */
+
+/* Accessibility: skip link — visible only on keyboard focus */
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 1rem;
+  z-index: 200;
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  background: rgba(10, 18, 38, 0.95);
+  color: var(--star);
+  border: 1px solid rgba(168, 216, 255, 0.5);
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: top 0.2s ease;
+}
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* Focus, in her language: a soft starlight glow — never removed, only styled */
+:focus-visible {
+  outline: 2px solid rgba(168, 216, 255, 0.85);
+  outline-offset: 3px;
+  border-radius: 6px;
+  box-shadow: 0 0 18px rgba(168, 216, 255, 0.35);
+}
+:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+/* View transitions: a gentle cross-fade between pages — and stillness
+   for anyone who asked for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.45s;
+    animation-timing-function: ease;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+    transition: none !important;
+  }
+}

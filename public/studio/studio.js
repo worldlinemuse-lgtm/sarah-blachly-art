@@ -164,9 +164,48 @@ async function publish() {
     refreshToolbar();
     setMode(null);
     toast('Published! Your site will update in about a minute.');
+    offerPublishSummary(lines);
   } catch (e) {
     console.error(e);
     toast('Publish failed: ' + e.message);
+  }
+}
+
+/* P2-1: her "newsletter" is a note to HERSELF. After a successful publish,
+   offer to email her what just went live — same hardened FormSubmit pattern
+   as the contact form (parsed body, explicit success, 15s timeout). */
+async function offerPublishSummary(lines) {
+  if (!lines || !lines.length) return;
+  const ok = await confirmDialog(
+    'Email yourself what just went live?',
+    lines.map((l) => `<li>${escapeHtml(l)}</li>`).join(''),
+    'A short summary lands in your inbox.',
+    'Send email',
+    'Skip'
+  );
+  if (!ok) return;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const res = await fetch('https://formsubmit.co/ajax/s.blachly2023@gmail.com', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        name: 'Studio',
+        _subject: 'Your site updated',
+        message: lines.join('\n'),
+      }),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error('the service answered ' + res.status);
+    const data = await res.json().catch(() => ({}));
+    if (String(data.success) !== 'true') throw new Error('the service refused the submission');
+    toast('Summary sent — check your inbox.');
+  } catch (e) {
+    console.error(e);
+    toast("Couldn't send the summary just now.");
+  } finally {
+    clearTimeout(timer);
   }
 }
 

@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 
 const artworks = await getCollection('artworks');
@@ -24,6 +25,13 @@ const orderedSeries = [
 ---
 
 <Base title="Work" description="Browse Sarah Blachly's art portfolio by category: Dragons, Abstract, Characters & OCs, Painting, and more.">
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "Work — Sarah Blachly",
+    "description": "Browse Sarah Blachly's art portfolio by category.",
+    "url": "https://worldlinemuse-lgtm.github.io/sarah-blachly-art/work/",
+  })} />
   <link rel="stylesheet" href="https://unpkg.com/photoswipe@5/dist/photoswipe.css" />
 
   <section class="fade-in" style="padding: 3rem 0;">
@@ -60,7 +68,20 @@ const orderedSeries = [
                   data-details-url={`${base}/work/${aslug}/`}
                   data-title={`${a.data.title} (${a.data.year})`}
                 >
-                  <img src={a.data.image.src} alt={a.data.alt} loading="lazy" />
+                  {a.data.image.format === 'svg' ? (
+                    <img src={a.data.image.src} alt={a.data.alt} loading="lazy" />
+                  ) : (
+                    <Image
+                      src={a.data.image}
+                      alt={a.data.alt}
+                      widths={[480, 800, 1200, 1600]}
+                      sizes="(max-width: 700px) 90vw, 800px"
+                      format="webp"
+                      quality={82}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  )}
                   <div class="art-meta">
                     <strong>{a.data.title}</strong>
                     <span>{a.data.year}{a.data.medium && ` · ${a.data.medium}`}</span>

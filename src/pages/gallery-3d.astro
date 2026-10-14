@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import { getImage } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 
 const base = import.meta.env.BASE_URL;
@@ -8,15 +9,29 @@ const artworks = await getCollection('artworks');
 function slugOf(id: string) { return id.replace(/\.md$/, ''); }
 
 // Up to 12 pieces for the room — featured first, then by order.
-const chosen = [...artworks]
-  .sort((a, b) => ((b.data.featured ? 1 : 0) - (a.data.featured ? 1 : 0)) || ((a.data.order || 0) - (b.data.order || 0)))
-  .slice(0, 12)
-  .map((a) => ({
-    src: a.data.image?.src ?? '',
-    title: a.data.title,
-    year: a.data.year,
-    slug: slugOf(a.id),
-  }));
+// Textures are build-time optimized webp (1024px); the onError pastel
+// gradient fallback in the room script stays untouched.
+const chosen = await Promise.all(
+  [...artworks]
+    .sort((a, b) => ((b.data.featured ? 1 : 0) - (a.data.featured ? 1 : 0)) || ((a.data.order || 0) - (b.data.order || 0)))
+    .slice(0, 12)
+    .map(async (a) => {
+      let src = a.data.image?.src ?? '';
+      try {
+        if (a.data.image && a.data.image.format !== 'svg') {
+          const optimized = await getImage({ src: a.data.image, width: 1024, format: 'webp' });
+          src = optimized.src;
+        }
+      } catch { /* fall back to the original source */ }
+      if (src.startsWith('/') && base !== '/' && !src.startsWith(base + '/')) src = base + src;
+      return {
+        src,
+        title: a.data.title,
+        year: a.data.year,
+        slug: slugOf(a.id),
+      };
+    })
+);
 ---
 
 <Base title="3D Gallery" description="Step into a quiet 3D gallery room to wander among Sarah Blachly's artwork.">
