@@ -59,7 +59,7 @@ const chosen = await Promise.all(
     </div>
   </section>
 
-  <script type="application/json" id="room3d-data" set:html={JSON.stringify(chosen)} />
+  <script type="application/json" id="room3d-data" set:html={JSON.stringify(chosen).replace(/</g, '\\u003c')} />
 
   <style>
     .room-ui {

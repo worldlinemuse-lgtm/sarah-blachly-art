@@ -99,10 +99,12 @@ export async function enter() {
       // Auto-reveal About sections Sarah has actually filled in. A section
       // becomes visible on the public page once its placeholder text is
       // gone; the flags are re-derived on every save so they always tell
-      // the truth. She never manages them by hand.
-      data.bio_ready = !body.includes('Your bio goes here');
-      data.statement_ready = !body.includes('Your artist statement goes here');
-      data.cv_ready = !body.includes('will be listed here as they come');
+      // the truth. She never manages them by hand. An empty save reveals
+      // nothing — no ghost headings on the public page.
+      const hasContent = body.trim().length > 0;
+      data.bio_ready = hasContent && !body.includes('Your bio goes here');
+      data.statement_ready = hasContent && !body.includes('Your artist statement goes here');
+      data.cv_ready = hasContent && !body.includes('will be listed here as they come');
       writeText(ABOUT_PATH, stringifyFM(data, body, order));
       toast('Bio saved. Publish to make it live.');
       refreshToolbar();
@@ -195,16 +197,16 @@ export async function enter() {
   try {
     for (const [value, label] of CATEGORIES) {
       const path = `${SERIES_DIR}/${value}.md`;
-      let desc = '', raw = null, data = {}, order = [];
+      let desc = '', raw = null, data = {}, order = [], cbody = '';
       try {
         raw = await readFile(path);
         if (raw != null) {
           const parsed = parseFM(raw);
-          data = parsed.data; order = parsed.order;
+          data = parsed.data; order = parsed.order; cbody = parsed.body;
           desc = data.description == null ? '' : String(data.description);
         }
       } catch { /* leave blank; save will create it */ }
-      catItems.push({ value, label, path, desc, raw, data, order });
+      catItems.push({ value, label, path, desc, raw, data, order, body: cbody });
     }
     catsBox.innerHTML = catItems.map((c, i) => `
       <label style="display:block; margin-bottom:0.6rem; font-weight:normal;">
@@ -221,7 +223,7 @@ export async function enter() {
       if (v === c.desc) return; // untouched — don't dirty the file
       c.data.description = v;
       if (!c.data.title) c.data.title = c.label;
-      const text = stringifyFM(c.data, '', c.order);
+      const text = stringifyFM(c.data, c.body, c.order);
       writeText(c.path, text);
       c.desc = v;
       changed++;
@@ -299,7 +301,10 @@ function parseFM(text) {
 function stringifyFM(data, body, order = []) {
   const keys = [...order.filter((k) => k in data), ...Object.keys(data).filter((k) => !order.includes(k))];
   const head = keys.map((k) => `${k}: ${JSON.stringify(data[k])}`).join('\n');
-  return `---\n${head}\n---\n\n${body}`;
+  // Single newline after the closing --- : parseFM and about.astro's strip
+  // regex each consume exactly one, so save/load cycles can't accumulate
+  // blank lines at the top of the body.
+  return `---\n${head}\n---\n${body}`;
 }
 
 function escapeHtml(s) {

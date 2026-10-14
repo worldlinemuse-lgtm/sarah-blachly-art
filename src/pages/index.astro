@@ -21,7 +21,7 @@ const featured = (await getCollection('artworks'))
     "@type": "WebSite",
     "name": "Sarah Blachly — Art Portfolio",
     "url": "https://worldlinemuse-lgtm.github.io/sarah-blachly-art/",
-  })} />
+  }).replace(/</g, '\u003c')} />
   <script type="application/ld+json" set:html={JSON.stringify({
     "@context": "https://schema.org",
     "@type": "Person",
@@ -30,11 +30,11 @@ const featured = (await getCollection('artworks'))
     "jobTitle": "Artist",
     "description": "Self-taught artist.",
     "url": "https://worldlinemuse-lgtm.github.io/sarah-blachly-art/",
-  })} />
+  }).replace(/</g, '\u003c')} />
   <section class="hero fade-in">
     <h1>Sarah Blachly</h1>
     <p class="subtitle">Art Portfolio</p>
-    <p data-studio-editable data-studio-target="site.json:heroStatement">{siteSettings.heroStatement}</p>
+    <p>{siteSettings.heroStatement}</p>
     <a class="btn" href={`${base}/work/`}>Enter the Gallery</a>
   </section>
 

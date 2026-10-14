@@ -47,7 +47,7 @@ const ogImage = jsonLd.image;
 ---
 
 <Base title={title} description={description || `${title} (${year}) by Sarah Blachly.`} ogImage={ogImage} ogType="article">
-  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />
 
   <article class="fade-in" style="padding: 3rem 0; max-width: 800px; margin: 0 auto;">
     <p><a href={`${import.meta.env.BASE_URL}/work/`}>&larr; Back to Work</a></p>

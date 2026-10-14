@@ -63,8 +63,8 @@ const orderedSeries = [
                   data-studio-card={aslug}
                   href={`${base}/work/${aslug}/`}
                   data-pswp-src={a.data.image.src}
-                  data-pswp-width="1600"
-                  data-pswp-height="2000"
+                  data-pswp-width={a.data.image.width || 1600}
+                  data-pswp-height={a.data.image.height || 2000}
                   data-details-url={`${base}/work/${aslug}/`}
                   data-title={`${a.data.title} (${a.data.year})`}
                 >

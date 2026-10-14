@@ -47,7 +47,7 @@ const aboutHtml = marked.parse(visible.join(''));
     "name": "About — Sarah Blachly",
     "url": "https://worldlinemuse-lgtm.github.io/sarah-blachly-art/about/",
     "about": { "@id": "https://worldlinemuse-lgtm.github.io/sarah-blachly-art/#artist" },
-  })} />
+  }).replace(/</g, '\u003c')} />
   <script type="application/ld+json" set:html={JSON.stringify({
     "@context": "https://schema.org",
     "@type": "Person",
@@ -56,14 +56,14 @@ const aboutHtml = marked.parse(visible.join(''));
     "jobTitle": "Artist",
     "description": "Self-taught artist.",
     "url": "https://worldlinemuse-lgtm.github.io/sarah-blachly-art/",
-  })} />
+  }).replace(/</g, '\u003c')} />
   <section class="fade-in" style="padding: 3rem 0; max-width: 680px; margin: 0 auto;">
     <h1>About</h1>
-    <div data-studio-editable data-studio-target="about.md:body" set:html={aboutHtml} />
+    <div class="about-body" set:html={aboutHtml} />
   </section>
 
   <style>
-    [data-studio-editable] h2 { margin-top: 2rem; }
-    [data-studio-editable] p { color: var(--text-dim); }
+    .about-body h2 { margin-top: 2rem; }
+    .about-body p { color: var(--text-dim); }
   </style>
 </Base>
