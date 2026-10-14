@@ -447,15 +447,18 @@ const navLinks = [
       }
 
       function initAmbientOnce() {
-        // ambient.js is an external script: it runs once per full page load,
-        // never on view-transition swaps. The footer persists, so its
-        // bindings (room tone, memory garden) survive with it.
+        // This inline script is a module: it executes before the deferred
+        // ambient.js below it. DOMContentLoaded always fires after deferred
+        // scripts, so waiting for it guarantees window.SarahAmbient exists.
+        // Runs once per full page load; the footer persists across
+        // view-transition swaps, so its bindings (room tone, memory garden)
+        // survive with it.
         if (window.__sarahAmbientInit) return;
+        window.__sarahAmbientInit = true;
         const run = () => {
-          window.__sarahAmbientInit = true;
           if (window.SarahAmbient) window.SarahAmbient.init(document.body.dataset.studioBase || '');
         };
-        if (document.readyState === 'loading') {
+        if (document.readyState === 'loading' || !window.SarahAmbient) {
           window.addEventListener('DOMContentLoaded', run, { once: true });
         } else {
           run();
