@@ -3,8 +3,41 @@ import Base from '../layouts/Base.astro';
 import { marked } from 'marked';
 import fs from 'node:fs';
 
-const aboutMd = fs.readFileSync('src/content/pages/about.md', 'utf8');
-const aboutHtml = marked.parse(aboutMd);
+const raw = fs.readFileSync('src/content/pages/about.md', 'utf8');
+
+// Split the YAML frontmatter (--- ... ---) from the markdown body.
+// Frontmatter must never reach marked — it would render as visible text.
+let flags = {};
+let body = raw;
+const fm = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
+if (fm) {
+  body = raw.slice(fm[0].length);
+  for (const line of fm[1].split('\n')) {
+    const m = line.match(/^(\w+):\s*(true|false)\s*$/);
+    if (m) flags[m[1]] = m[2] === 'true';
+  }
+}
+
+// Show only the sections Sarah has actually filled in. The Self-Taught
+// Path section is real copy and always shows; Bio / Artist Statement /
+// CV appear once their placeholder text has been replaced in the Studio
+// (the Studio flips the flags automatically on save — she never manages
+// them by hand). Visitors never see "your bio goes here".
+const SECTION_FLAGS = {
+  'Bio': 'bio_ready',
+  'Artist Statement': 'statement_ready',
+  'CV / Exhibition History': 'cv_ready',
+};
+const parts = body.split(/(?=^## )/m);
+const visible = parts.filter((part) => {
+  const h = part.match(/^## (.+)$/m);
+  if (!h) return true; // content before the first heading stays
+  const name = h[1].trim();
+  if (name === 'The Self-Taught Path') return true;
+  const flag = SECTION_FLAGS[name];
+  return flag ? flags[flag] === true : true;
+});
+const aboutHtml = marked.parse(visible.join(''));
 ---
 
 <Base title="About" description="About Sarah Blachly — self-taught artist.">

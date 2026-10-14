@@ -87,7 +87,15 @@ export async function enter() {
     try {
       const raw = await readFile(ABOUT_PATH);
       const { data, order } = raw == null ? { data: {}, order: [] } : parseFM(raw);
-      writeText(ABOUT_PATH, stringifyFM(data, bioArea.value.trim() + '\n', order));
+      const body = bioArea.value.trim() + '\n';
+      // Auto-reveal About sections Sarah has actually filled in. A section
+      // becomes visible on the public page once its placeholder text is
+      // gone; the flags are re-derived on every save so they always tell
+      // the truth. She never manages them by hand.
+      data.bio_ready = !body.includes('Your bio goes here');
+      data.statement_ready = !body.includes('Your artist statement goes here');
+      data.cv_ready = !body.includes('will be listed here as they come');
+      writeText(ABOUT_PATH, stringifyFM(data, body, order));
       toast('Bio saved. Publish to make it live.');
       refreshToolbar();
     } catch (e) { fail('Could not save your bio: ' + e.message); }

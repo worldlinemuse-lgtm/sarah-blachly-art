@@ -1,7 +1,17 @@
 ---
 import Base from '../layouts/Base.astro';
+import { getCollection } from 'astro:content';
 import siteSettings from '../content/settings/site.json';
 const base = import.meta.env.BASE_URL;
+
+function slugOf(id: string) { return id.replace(/\.md$/, ''); }
+
+// The Featured section only exists when Sarah has flagged artwork as
+// featured in the Studio. No placeholders — visitors never see
+// "will appear here once artwork is added."
+const featured = (await getCollection('artworks'))
+  .filter((a) => a.data.featured)
+  .sort((a, b) => (a.data.order || 0) - (b.data.order || 0));
 ---
 
 <Base title="Home" description="Sarah Blachly — self-taught artist. A dark forest gallery under the Milky Way.">
@@ -22,20 +32,59 @@ const base = import.meta.env.BASE_URL;
       margin: -0.5rem 0 1.5rem;
       text-shadow: 0 0 30px rgba(168, 216, 255, 0.4);
     }
+    .featured-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+      max-width: 900px;
+      margin: 1.5rem auto;
+      text-align: left;
+    }
+    .featured-card {
+      display: block;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(143, 184, 255, 0.15);
+      text-decoration: none;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .featured-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 24px rgba(168, 216, 255, 0.12);
+    }
+    .featured-card img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      display: block;
+    }
+    .featured-meta { padding: 0.7rem 0.9rem; }
+    .featured-meta strong { display: block; color: var(--text); font-family: var(--serif); }
+    .featured-meta span { color: var(--text-dim); font-size: 0.85rem; }
   </style>
 
-  <hr class="divider" />
+  {featured.length > 0 && (
+    <>
+      <hr class="divider" />
 
-  <section class="fade-in" style="text-align:center; max-width:640px; margin:0 auto;">
-    <h2>Artist Statement</h2>
-    <p style="color: var(--text-dim);"><em>Your artist statement will live here — a few lines about what you make and why.</em></p>
-  </section>
-
-  <hr class="divider" />
-
-  <section class="fade-in" style="text-align:center;">
-    <h2>Featured Work</h2>
-    <p style="color: var(--text-dim);"><em>Flagship pieces will appear here once artwork is added.</em></p>
-    <a class="btn" href={`${base}/work/`}>Browse All Work</a>
-  </section>
+      <section class="fade-in" style="text-align:center;">
+        <h2>Featured Work</h2>
+        <div class="featured-grid">
+          {featured.map((a) => {
+            const aslug = slugOf(a.id);
+            return (
+              <a class="featured-card" href={`${base}/work/${aslug}/`}>
+                <img src={a.data.image.src} alt={a.data.alt} loading="lazy" />
+                <div class="featured-meta">
+                  <strong>{a.data.title}</strong>
+                  <span>{a.data.year}{a.data.medium && ` · ${a.data.medium}`}</span>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+        <a class="btn" href={`${base}/work/`}>Browse All Work</a>
+      </section>
+    </>
+  )}
 </Base>

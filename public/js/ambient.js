@@ -340,6 +340,8 @@
       'style="flex:1;min-width:0;background:rgba(20,24,48,0.5);' +
       'border:1px solid rgba(180,190,235,0.25);border-radius:6px;color:#e8ebfa;' +
       'padding:0.4rem 0.6rem;font:inherit;font-size:0.85rem;" />' +
+      '<input id="leave-trace-honey" type="text" name="_honey" tabindex="-1" ' +
+      'autocomplete="off" aria-hidden="true" style="display:none !important;" />' +
       '<button type="submit" style="background:none;border:1px solid rgba(180,190,235,0.35);' +
       'border-radius:6px;color:rgba(226,230,250,0.8);padding:0.4rem 0.8rem;' +
       'font:inherit;font-size:0.85rem;cursor:pointer;">send</button></div>' +
@@ -363,8 +365,21 @@
       var word = inputEl ? inputEl.value.trim() : '';
       if (!word) { if (statusEl) statusEl.textContent = 'Write a word first.'; return; }
       var btn = form.querySelector('button[type="submit"]');
+      // Client-side honeypot: FormSubmit's AJAX endpoint ignores _honey
+      // server-side, so bots are stopped here before any network call.
+      var honey = form.querySelector('#leave-trace-honey');
+      if (honey && honey.value) {
+        if (statusEl) statusEl.textContent = 'Thank you — Sarah will review it.';
+        if (inputEl) inputEl.value = '';
+        return;
+      }
       if (btn) btn.disabled = true;
       if (statusEl) statusEl.textContent = 'Sending…';
+
+      // FormSubmit sometimes hangs without answering; never leave the
+      // visitor staring at "Sending…" forever.
+      var controller = new AbortController();
+      var timeout = setTimeout(function () { controller.abort(); }, 15000);
 
       fetch('https://formsubmit.co/ajax/s.blachly2023@gmail.com', {
         method: 'POST',
@@ -373,18 +388,25 @@
           name: 'Memory garden visitor',
           _subject: 'Memory garden trace — needs your approval',
           message: word
-        })
+        }),
+        signal: controller.signal
       })
         .then(function (res) {
           if (!res.ok) throw new Error('send failed');
           return res.json().catch(function () { return {}; });
         })
-        .then(function () {
+        .then(function (payload) {
+          clearTimeout(timeout);
+          // FormSubmit answers HTTP 200 with {"success":"false"} when it
+          // refuses a submission. Only an explicit success earns the
+          // thank-you — never claim a trace was sent when it wasn't.
+          if (String(payload.success) !== 'true') throw new Error('refused');
           if (statusEl) statusEl.textContent = 'Thank you — Sarah will review it.';
           if (inputEl) inputEl.value = '';
           if (btn) btn.disabled = false;
         })
         .catch(function () {
+          clearTimeout(timeout);
           if (statusEl) statusEl.textContent = 'Could not send just now — please try again later.';
           if (btn) btn.disabled = false;
         });

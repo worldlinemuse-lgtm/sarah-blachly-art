@@ -52,19 +52,41 @@ const RECIPIENT = 's.blachly2023@gmail.com';
         status.textContent = 'Sending…';
         sendBtn.disabled = true;
         const data = Object.fromEntries(new FormData(form).entries());
+        // Client-side honeypot: FormSubmit's AJAX endpoint ignores _honey
+        // server-side, so bots are stopped here before any network call.
+        // Treat as sent — a bot filled it; a human never sees the field.
+        if (data._honey) {
+          status.textContent = 'Sent — thank you! Sarah will reply soon.';
+          form.reset();
+          sendBtn.disabled = false;
+          return;
+        }
+        // FormSubmit sometimes hangs without answering; never leave the
+        // visitor staring at "Sending…" forever.
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
         try {
           const res = await fetch(`https://formsubmit.co/ajax/${recipient}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify(data),
+            signal: controller.signal,
           });
           if (!res.ok) throw new Error('the service answered ' + res.status);
+          const payload = await res.json().catch(() => ({}));
+          // FormSubmit answers HTTP 200 with {"success":"false"} when it
+          // refuses a submission (unactivated account, origin policy).
+          // Only an explicit success earns the "Sent" message.
+          if (String(payload.success) !== 'true') {
+            throw new Error('the service refused the submission');
+          }
           status.textContent = 'Sent — thank you! Sarah will reply soon.';
           form.reset();
         } catch (err) {
           status.innerHTML = 'Something hiccuped sending that. Please email Sarah directly at ' +
             `<a href="mailto:${recipient}">${recipient}</a>.`;
         } finally {
+          clearTimeout(timeout);
           sendBtn.disabled = false;
         }
       });

@@ -1,3 +1,9 @@
+---
+bio_ready: false
+statement_ready: false
+cv_ready: false
+---
+
 ## Bio
 
 Your bio goes here — open the Studio, click this text, and write it yourself.
