@@ -11,6 +11,7 @@ const CATEGORIES = [
   ['characters-ocs', 'Characters & OCs'],
   ['painting', 'Painting'],
   ['miscellaneous', 'Miscellaneous'],
+  ['beginnings', 'Beginnings'],
 ];
 
 export function enter() {

@@ -41,6 +41,22 @@ const aboutHtml = marked.parse(visible.join(''));
 ---
 
 <Base title="About" description="About Sarah Blachly — self-taught artist.">
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    "name": "About — Sarah Blachly",
+    "url": "https://worldlinemuse-lgtm.github.io/sarah-blachly-art/about/",
+    "about": { "@id": "https://worldlinemuse-lgtm.github.io/sarah-blachly-art/#artist" },
+  })} />
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "@id": "https://worldlinemuse-lgtm.github.io/sarah-blachly-art/#artist",
+    "name": "Sarah Blachly",
+    "jobTitle": "Artist",
+    "description": "Self-taught artist.",
+    "url": "https://worldlinemuse-lgtm.github.io/sarah-blachly-art/",
+  })} />
   <section class="fade-in" style="padding: 3rem 0; max-width: 680px; margin: 0 auto;">
     <h1>About</h1>
     <div data-studio-editable data-studio-target="about.md:body" set:html={aboutHtml} />

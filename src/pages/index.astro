@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
 import siteSettings from '../content/settings/site.json';
 const base = import.meta.env.BASE_URL;
@@ -15,6 +16,21 @@ const featured = (await getCollection('artworks'))
 ---
 
 <Base title="Home" description="Sarah Blachly — self-taught artist. A dark forest gallery under the Milky Way.">
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Sarah Blachly — Art Portfolio",
+    "url": "https://worldlinemuse-lgtm.github.io/sarah-blachly-art/",
+  })} />
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "@id": "https://worldlinemuse-lgtm.github.io/sarah-blachly-art/#artist",
+    "name": "Sarah Blachly",
+    "jobTitle": "Artist",
+    "description": "Self-taught artist.",
+    "url": "https://worldlinemuse-lgtm.github.io/sarah-blachly-art/",
+  })} />
   <section class="hero fade-in">
     <h1>Sarah Blachly</h1>
     <p class="subtitle">Art Portfolio</p>
@@ -70,11 +86,30 @@ const featured = (await getCollection('artworks'))
       <section class="fade-in" style="text-align:center;">
         <h2>Featured Work</h2>
         <div class="featured-grid">
-          {featured.map((a) => {
+          {featured.map((a, i) => {
             const aslug = slugOf(a.id);
+            // LCP: the lead featured image is above the fold — eager + high
+            // priority, never lazy. SVG placeholders bypass <Image> (Astro
+            // cannot rasterize SVG); real raster uploads get webp variants.
+            const eager = i === 0;
+            const img = a.data.image.format === 'svg' ? (
+              <img src={a.data.image.src} alt={a.data.alt} loading={eager ? "eager" : "lazy"} fetchpriority={eager ? "high" : "auto"} />
+            ) : (
+              <Image
+                src={a.data.image}
+                alt={a.data.alt}
+                widths={[480, 800, 1200]}
+                sizes="(max-width: 700px) 90vw, 480px"
+                format="webp"
+                quality={82}
+                loading={eager ? "eager" : "lazy"}
+                fetchpriority={eager ? "high" : "auto"}
+                decoding="async"
+              />
+            );
             return (
               <a class="featured-card" href={`${base}/work/${aslug}/`}>
-                <img src={a.data.image.src} alt={a.data.alt} loading="lazy" />
+                {img}
                 <div class="featured-meta">
                   <strong>{a.data.title}</strong>
                   <span>{a.data.year}{a.data.medium && ` · ${a.data.medium}`}</span>

@@ -13,6 +13,7 @@ const CATEGORIES = [
   ['characters-ocs', 'Characters & OCs'],
   ['painting', 'Painting'],
   ['miscellaneous', 'Miscellaneous'],
+  ['beginnings', 'Beginnings'],
 ];
 const ART_DIR = 'src/content/artworks';
 const ABOUT_PATH = 'src/content/pages/about.md';
@@ -51,6 +52,13 @@ export async function enter() {
       <div data-featured style="display:flex; flex-direction:column; gap:0.35rem;">Loading…</div>
       <div style="margin:0.4rem 0 0.2rem; text-align:right;">
         <button class="studio-btn studio-btn-primary" data-save-featured>Save featured</button>
+      </div>
+
+      <h3 style="margin-top:1.2rem;">Categories</h3>
+      <p style="font-size:0.9rem;">The short line under each category name on your Work page.</p>
+      <div data-cats>Loading…</div>
+      <div style="margin:0.4rem 0 0.2rem; text-align:right;">
+        <button class="studio-btn studio-btn-primary" data-save-cats>Save categories</button>
       </div>
 
       <h3 style="margin-top:1.2rem;">Visitor traces (Memory garden)</h3>
@@ -177,6 +185,48 @@ export async function enter() {
       it.data = data;
     });
     toast('Featured picks saved. Publish to make it live.');
+    refreshToolbar();
+  };
+
+  // ---- Categories (series descriptions) ----
+  const SERIES_DIR = 'src/content/series';
+  const catsBox = overlay.querySelector('[data-cats]');
+  const catItems = [];
+  try {
+    for (const [value, label] of CATEGORIES) {
+      const path = `${SERIES_DIR}/${value}.md`;
+      let desc = '', raw = null, data = {}, order = [];
+      try {
+        raw = await readFile(path);
+        if (raw != null) {
+          const parsed = parseFM(raw);
+          data = parsed.data; order = parsed.order;
+          desc = data.description == null ? '' : String(data.description);
+        }
+      } catch { /* leave blank; save will create it */ }
+      catItems.push({ value, label, path, desc, raw, data, order });
+    }
+    catsBox.innerHTML = catItems.map((c, i) => `
+      <label style="display:block; margin-bottom:0.6rem; font-weight:normal;">
+        <strong>${escapeHtml(c.label)}</strong>
+        <textarea data-cat="${i}" rows="2" style="width:100%;" placeholder="A line about this category…">${escapeHtml(c.desc)}</textarea>
+      </label>`).join('');
+  } catch (e) { catsBox.innerHTML = '<p>Could not load categories.</p>'; }
+  overlay.querySelector('[data-save-cats]').onclick = () => {
+    err.hidden = true;
+    let changed = 0;
+    catsBox.querySelectorAll('[data-cat]').forEach((ta) => {
+      const c = catItems[parseInt(ta.dataset.cat, 10)];
+      const v = ta.value.trim();
+      if (v === c.desc) return; // untouched — don't dirty the file
+      c.data.description = v;
+      if (!c.data.title) c.data.title = c.label;
+      const text = stringifyFM(c.data, '', c.order);
+      writeText(c.path, text);
+      c.desc = v;
+      changed++;
+    });
+    toast(changed ? 'Categories saved. Publish to make them live.' : 'No category changes.');
     refreshToolbar();
   };
 

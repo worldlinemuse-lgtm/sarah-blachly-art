@@ -160,14 +160,19 @@
   function initSand() {
     if (REDUCED) return; // animation feature: skipped under reduced motion
 
-    var canvas = document.createElement('canvas');
-    canvas.id = 'raked-sand';
+    // Reuse the template canvas when present (it carries transition:persist
+    // so it survives view-transition navigations); create it otherwise.
+    var canvas = document.getElementById('raked-sand');
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.id = 'raked-sand';
+      document.body.appendChild(canvas);
+    }
     canvas.setAttribute('aria-hidden', 'true');
     canvas.style.cssText = [
       'position:fixed', 'inset:0', 'width:100vw', 'height:100vh',
       'z-index:2', 'pointer-events:none'
     ].join(';') + ';';
-    document.body.appendChild(canvas);
 
     var g = canvas.getContext('2d');
     if (!g) return;
@@ -421,10 +426,17 @@
   function init(base) {
     base = (base || '').replace(/\/$/, ''); // tolerate trailing slash
     initRoomTone();
-    initWhisper(base);
     initSand();
     initGarden(base);
   }
 
-  window.SarahAmbient = { init: init };
+  // Called on every page view, including client-side view-transition
+  // navigations (astro:page-load). The Curator's Whisper counts artwork
+  // views, so it must run per navigation, not just per full page load.
+  function pageView(base) {
+    base = (base || '').replace(/\/$/, '');
+    initWhisper(base);
+  }
+
+  window.SarahAmbient = { init: init, pageView: pageView };
 })();

@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import { Image } from 'astro:assets';
 import Base from '../../layouts/Base.astro';
 import fs from 'node:fs';
 
@@ -38,11 +39,14 @@ const jsonLd = {
   "dateCreated": String(year),
   "artMedium": medium || undefined,
   "description": description || undefined,
-  "creator": { "@type": "Person", "name": "Sarah Blachly" },
+  "creator": { "@id": "https://worldlinemuse-lgtm.github.io/sarah-blachly-art/#artist" },
+  "image": /^https?:\/\//.test(img.src) ? img.src : `https://worldlinemuse-lgtm.github.io${img.src.startsWith('/') ? img.src : '/' + img.src}`,
+  "url": `https://worldlinemuse-lgtm.github.io/sarah-blachly-art/work/${artwork.id.replace(/\.md$/, '')}/`,
 };
+const ogImage = jsonLd.image;
 ---
 
-<Base title={title} description={description || `${title} (${year}) by Sarah Blachly.`}>
+<Base title={title} description={description || `${title} (${year}) by Sarah Blachly.`} ogImage={ogImage} ogType="article">
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
   <article class="fade-in" style="padding: 3rem 0; max-width: 800px; margin: 0 auto;">
@@ -54,11 +58,23 @@ const jsonLd = {
       {dimensions && dimensions !== '—' && ` · ${dimensions}`}
     </p>
     <div style="position:relative;">
-      <img
-        src={img.src}
-        alt={alt}
-        style="width:100%; border-radius: 12px; border: 1px solid rgba(143,184,255,0.2); box-shadow: 0 0 60px rgba(168,216,255,0.08); display:block;"
-      />
+      {img.format === 'svg' ? (
+        <img
+          src={img.src}
+          alt={alt}
+          style="width:100%; border-radius: 12px; border: 1px solid rgba(143,184,255,0.2); box-shadow: 0 0 60px rgba(168,216,255,0.08); display:block;"
+        />
+      ) : (
+        <Image
+          src={img}
+          alt={alt}
+          widths={[480, 800, 1200, 1600]}
+          sizes="(max-width: 800px) 92vw, 800px"
+          format="webp"
+          quality={82}
+          style="width:100%; border-radius: 12px; border: 1px solid rgba(143,184,255,0.2); box-shadow: 0 0 60px rgba(168,216,255,0.08); display:block;"
+        />
+      )}
       {hasSignature && (
         <img
           src={`${base}/images/studio/signature.png`}
