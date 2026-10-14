@@ -57,7 +57,15 @@ const ogImage = jsonLd.image;
       {medium && ` · ${medium}`}
       {dimensions && dimensions !== '—' && ` · ${dimensions}`}
     </p>
-    <div style="position:relative;">
+    <div style="position:relative;" data-detail-zoom>
+      <a
+        href={img.src}
+        data-pswp-src={img.src}
+        data-pswp-width={img.width || 1600}
+        data-pswp-height={img.height || 2000}
+        aria-label={`Zoom in on ${title}`}
+        style="display:block; cursor: zoom-in;"
+      >
       {img.format === 'svg' ? (
         <img
           src={img.src}
@@ -75,6 +83,7 @@ const ogImage = jsonLd.image;
           style="width:100%; border-radius: 12px; border: 1px solid rgba(143,184,255,0.2); box-shadow: 0 0 60px rgba(168,216,255,0.08); display:block;"
         />
       )}
+      </a>
       {hasSignature && (
         <img
           src={`${base}/images/studio/signature.png`}
@@ -85,4 +94,20 @@ const ogImage = jsonLd.image;
     </div>
     {description && <p style="margin-top: 1.5rem; max-width: 640px;">{description}</p>}
   </article>
+
+  <script>
+    import PhotoSwipeLightbox from 'photoswipe/lightbox';
+    const zoomHost = document.querySelector('[data-detail-zoom]');
+    if (zoomHost) {
+      const lightbox = new PhotoSwipeLightbox({
+        gallery: zoomHost,
+        children: 'a[data-pswp-src]',
+        pswpModule: () => import('photoswipe'),
+        padding: { top: 40, bottom: 40, left: 20, right: 20 },
+        zoom: true,
+        maxZoomLevel: 4,
+      });
+      lightbox.init();
+    }
+  </script>
 </Base>
