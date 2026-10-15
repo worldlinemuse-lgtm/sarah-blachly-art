@@ -3,7 +3,6 @@ bio_ready: false
 statement_ready: false
 cv_ready: false
 ---
-
 ## Bio
 
 Your bio goes here — open the Studio, click this text, and write it yourself.
@@ -14,7 +13,7 @@ Your artist statement goes here.
 
 ## The Self-Taught Path
 
-No official schooling — just a life full of practice. That should be part of the story, and it is: every piece here was learned the long way, by doing.
+No official schooling — just a life full of practice.
 
 ## CV / Exhibition History
 
