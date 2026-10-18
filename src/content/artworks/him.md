@@ -1,8 +1,7 @@
 ---
 title: "Him"
 year: 2026
-medium: "Ibispaint"
-series: abstract
+series: dragons
 featured: false
 order: 999
 image: ../../assets/uploads/him.png
